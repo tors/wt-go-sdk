@@ -11,8 +11,8 @@ func Authorize(c *Client) error {
 	}
 
 	var responseMessage struct {
-		success bool   `json:"success"`
-		token   string `json:"token,omitempty"`
+		Success bool   `json:"success"`
+		Token   string `json:"token,omitempty"`
 	}
 
 	_, err = c.Do(context.Background(), req, &responseMessage)
@@ -20,6 +20,6 @@ func Authorize(c *Client) error {
 		return err
 	}
 
-	c.JWTAuthToken = responseMessage.token
+	c.JWTAuthToken = responseMessage.Token
 	return nil
 }
