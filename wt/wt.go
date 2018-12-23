@@ -31,13 +31,13 @@ type Client struct {
 	// WeTransfer JWT Authorization token
 	JWTAuthToken string
 
-	// User agent used when communicating with the WeTransfer API.
+	// User agent used when communicating with the API.
 	UserAgent string
 
 	// Reuse a single struct instead of allocating one for each service on the heap.
 	common service
 
-	// Services used for talking to different parts of the WeTransfer API.
+	// Services used for talking to different parts of the API.
 	Transfer *TransferService
 	Board    *BoardService
 }
@@ -46,6 +46,8 @@ type service struct {
 	client *Client
 }
 
+// NewClient returns a new WeTransfer unauthorized API client. If a nil httpClient is
+// provided, http.DefaultClient will be used.
 func NewClient(apiKey string, httpClient *http.Client) (*Client, error) {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
@@ -64,17 +66,27 @@ func NewClient(apiKey string, httpClient *http.Client) (*Client, error) {
 		UserAgent: userAgent,
 	}
 
-	err := c.authorize()
-	if err != nil {
-		return nil, err
-	}
-
 	c.common.client = c
 
 	c.Transfer = (*TransferService)(&c.common)
 	c.Board = (*BoardService)(&c.common)
 
 	return c, nil
+}
+
+// NewAuthorizedClient returns a new WeTransfer authorized API client.
+func NewAuthorizedClient(apiKey string, httpClient *http.Client) (*Client, error) {
+	client, err := NewClient(apiKey, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = Authorize(client)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
@@ -190,27 +202,6 @@ func CheckResponse(r *http.Response) error {
 	}
 
 	return errResp
-}
-
-// Helper fn to set JWT auth token
-func (c *Client) authorize() error {
-	req, err := c.NewRequest("POST", "authorize", nil)
-	if err != nil {
-		return err
-	}
-
-	var responseMessage struct {
-		success bool   `json:"success"`
-		token   string `json:"token,omitempty"`
-	}
-
-	_, err = c.Do(context.Background(), req, &responseMessage)
-	if err != nil {
-		return err
-	}
-
-	c.JWTAuthToken = responseMessage.token
-	return nil
 }
 
 // An ErrorResponse reports the errors caused by an API request.
