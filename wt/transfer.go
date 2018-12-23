@@ -2,7 +2,6 @@ package wt
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -49,27 +48,40 @@ func NewTransferParam(message string) *TransferParam {
 
 type TransferService service
 
+// Create informs the API that we want to create a transfer (with at
+// least one file). There are no actual files being sent here.
 func (t *TransferService) Create(ctx context.Context, param *TransferParam) (*Transfer, error) {
 	if len(param.Files) == 0 {
 		return nil, fmt.Errorf("Files must not be empty")
 	}
 
 	req, err := t.client.NewRequest("POST", "transfers", param)
-
 	if err != nil {
 		return nil, err
 	}
 
 	transfer := &Transfer{}
 
-	_, err = t.client.Do(ctx, req, transfer)
-	if err != nil {
+	if _, err = t.client.Do(ctx, req, transfer); err != nil {
 		return nil, err
 	}
 
 	return transfer, nil
 }
 
-func (t *TransferService) Find() (*Transfer, error) {
-	return nil, errors.New("not implemented error")
+// Find retrieves transfer information given an ID.
+func (t *TransferService) Find(ctx context.Context, id string) (*Transfer, error) {
+	path := fmt.Sprintf("transfers/%v", id)
+
+	req, err := t.client.NewRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	transfer := &Transfer{}
+	if _, err = t.client.Do(ctx, req, transfer); err != nil {
+		return nil, err
+	}
+
+	return transfer, nil
 }
