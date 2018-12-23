@@ -35,7 +35,13 @@ import (
 func main() {
   apiKey := "<your-api-key>"
   client, _ := wt.NewAuthorizedClient(apiKey, nil)
-  resp, _ := client.Transfer.Create()
+
+	param := wt.NewTransferParam("First transfer.")
+	param.AddFile("big-bobis.jpg", 195906)
+
+	ctx := context.Background()
+
+  resp, _ := client.Transfer.Create(ctx, param)
   fmt.Printf("%+v\n", resp)
 }
 ```
