@@ -13,6 +13,7 @@ func getValidTransferHandler(t *testing.T) func(http.ResponseWriter, *http.Reque
 
 		testMethod(t, r, "POST")
 		testHeader(t, r, "x-api-key", testApiKey)
+		testHeader(t, r, "Authorization", fmt.Sprintf("Bearer %v", testJWTAuthToken))
 
 		fmt.Fprint(w, `
 			{
