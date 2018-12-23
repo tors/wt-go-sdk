@@ -32,11 +32,11 @@ type Transfer struct {
 
 type TransferParam struct {
 	Message string `json:"message"`
-	Files   []M    `json:"files"`
+	Files   []*M   `json:"files"`
 }
 
 func (t *TransferParam) AddFile(name string, size int64) {
-	t.Files = append(t.Files, M{
+	t.Files = append(t.Files, &M{
 		"name": name,
 		"size": size,
 	})
@@ -45,7 +45,7 @@ func (t *TransferParam) AddFile(name string, size int64) {
 func NewTransferParam(message string) *TransferParam {
 	return &TransferParam{
 		Message: message,
-		Files:   make([]M, 0),
+		Files:   make([]*M, 0),
 	}
 }
 

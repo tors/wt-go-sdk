@@ -8,8 +8,12 @@ import (
 	"testing"
 )
 
-func getValidTransferHandler(cb func(*http.Request)) func(http.ResponseWriter, *http.Request) {
+func getValidTransferHandler(t *testing.T) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		testMethod(t, r, "POST")
+		testHeader(t, r, "x-api-key", testApiKey)
+
 		fmt.Fprint(w, `
 			{
 			  "success" : true,
@@ -32,7 +36,6 @@ func getValidTransferHandler(cb func(*http.Request)) func(http.ResponseWriter, *
 			  ]
 			}
 		`)
-		cb(r)
 	}
 }
 
@@ -40,11 +43,7 @@ func TestTransferService_Create(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
-	handler := getValidTransferHandler(func(r *http.Request) {
-		testMethod(t, r, "POST")
-	})
-
-	mux.HandleFunc("/transfers", handler)
+	mux.HandleFunc("/transfers", getValidTransferHandler(t))
 
 	param := NewTransferParam("")
 	param.AddFile("big-bobis.jpg", 195906)
@@ -84,15 +83,45 @@ func TestTransferService_Create(t *testing.T) {
 	}
 }
 
+func TestTransferService_Create_badRequest(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantError := "Bad request"
+	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		fmt.Fprint(w, fmt.Sprintf(`
+			{
+				"success": false,
+				"message": "%v"
+			}
+		`, wantError))
+	})
+
+	files := []*M{
+		&M{"something": 1},
+		&M{"bad": 2},
+	}
+
+	param := NewTransferParam("")
+	param.Files = files
+
+	_, err := client.Transfer.Create(context.Background(), param)
+
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+
+	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
+	}
+}
+
 func TestTransferService_Create_emptyFiles(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
-	handler := getValidTransferHandler(func(r *http.Request) {
-		testMethod(t, r, "POST")
-	})
-
-	mux.HandleFunc("/transfers", handler)
+	mux.HandleFunc("/transfers", getValidTransferHandler(t))
 
 	param := NewTransferParam("")
 	_, err := client.Transfer.Create(context.Background(), param)
