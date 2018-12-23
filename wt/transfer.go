@@ -6,7 +6,7 @@ type File struct {
 	Multipart *struct {
 		PartNumbers *int64 `json:"part_numbers"`
 		ChunkSize   *int64 `json:"chunk_size"`
-	} `json:"multipart"`
+	} `json:"multipart,omitempty"`
 
 	Size *int64  `json:"size"`
 	Type *string `json:"type"`
