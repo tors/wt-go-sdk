@@ -33,7 +33,7 @@ import (
 
 func main() {
   apiKey := "<your-api-key>"
-  client, _ := wt.NewClient(apiKey, nil)
+  client, _ := wt.NewAuthorizedClient(apiKey, nil)
   resp, _ := client.Transfer.Create()
   fmt.Printf("%+v\n", resp)
 }

@@ -12,7 +12,7 @@ func main() {
 	fmt.Print("Enter API key: ")
 	fmt.Scanf("%s", &apiKey)
 
-	client, err := wt.NewClient(apiKey, nil)
+	client, err := wt.NewAuthorizedClient(apiKey, nil)
 	checkErr(err)
 
 	resp, err := client.Transfer.Create()
