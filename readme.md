@@ -26,7 +26,9 @@ This is the bare minimum code needed to create a transfer...
 package main
 
 import (
+  "context"
   "fmt"
+
   "github.com/tors/wt-go-sdk/wt"
 )
 
