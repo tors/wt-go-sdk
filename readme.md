@@ -1,4 +1,5 @@
 # WeTransfer Go SDK
+[![Build Status](https://travis-ci.org/tors/wt-go-sdk.svg?branch=master)](https://travis-ci.org/tors/wt-go-sdk)
 
 This is an unofficial WeTransfer Go SDK.
 
