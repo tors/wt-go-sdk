@@ -8,12 +8,8 @@ import (
 	"testing"
 )
 
-func TestTransferService_Create(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
-
-	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, "POST")
+func getValidTransferHandler(cb func(*http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `
 			{
 			  "success" : true,
@@ -36,7 +32,19 @@ func TestTransferService_Create(t *testing.T) {
 			  ]
 			}
 		`)
+		cb(r)
+	}
+}
+
+func TestTransferService_Create(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	handler := getValidTransferHandler(func(r *http.Request) {
+		testMethod(t, r, "POST")
 	})
+
+	mux.HandleFunc("/transfers", handler)
 
 	param := NewTransferParam("")
 	param.AddFile("big-bobis.jpg", 195906)
@@ -73,6 +81,28 @@ func TestTransferService_Create(t *testing.T) {
 
 	if !reflect.DeepEqual(transfer, want) {
 		t.Errorf("TransferService.Create returned %v, want %v", transfer, want)
+	}
+}
+
+func TestTransferService_Create_emptyFiles(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	handler := getValidTransferHandler(func(r *http.Request) {
+		testMethod(t, r, "POST")
+	})
+
+	mux.HandleFunc("/transfers", handler)
+
+	param := NewTransferParam("")
+	_, err := client.Transfer.Create(context.Background(), param)
+
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+
+	if err != ErrEmptyFiles {
+		t.Errorf("Error is %+v, want %+v", err, ErrEmptyFiles)
 	}
 }
 

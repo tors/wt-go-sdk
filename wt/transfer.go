@@ -2,8 +2,11 @@ package wt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
+
+var ErrEmptyFiles = errors.New("Files must contain at least 1 item")
 
 type File struct {
 	Multipart *struct {
@@ -52,7 +55,7 @@ type TransferService service
 // least one file). There are no actual files being sent here.
 func (t *TransferService) Create(ctx context.Context, param *TransferParam) (*Transfer, error) {
 	if len(param.Files) == 0 {
-		return nil, fmt.Errorf("Files must not be empty")
+		return nil, ErrEmptyFiles
 	}
 
 	req, err := t.client.NewRequest("POST", "transfers", param)
