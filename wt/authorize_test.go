@@ -12,7 +12,7 @@ func TestAuthorize(t *testing.T) {
 
 	mux.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
-		fmt.Fprint(w, `{"success":true,"token":"abc"}`)
+		fmt.Fprint(w, fmt.Sprintf(`{"success":true,"token":"%s"}`, testApiKey))
 	})
 
 	err := Authorize(client)
@@ -22,5 +22,28 @@ func TestAuthorize(t *testing.T) {
 
 	if client.JWTAuthToken != testApiKey {
 		t.Errorf("Client.JWTAuthToken returned %v, want %v", client.JWTAuthToken, testApiKey)
+	}
+}
+
+func TestAuthorize_forbidden(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantError := "Forbidden: invalid API Key"
+
+	mux.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "POST")
+		w.WriteHeader(403)
+		fmt.Fprint(w, fmt.Sprintf(`{"success":false,"message":"%s"}`, wantError))
+	})
+
+	err := Authorize(client)
+
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+
+	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
 	}
 }
