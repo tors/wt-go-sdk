@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	testApiKey = "abc"
+	testApiKey       = "abc"
+	testJWTAuthToken = "jwt-token"
 )
 
 // setup sets up a test HTTP server along with a wt.Client that is
@@ -23,7 +24,9 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	// client configured to use test server
 	client, _ = NewClient(testApiKey, nil)
 	url, _ := url.Parse(server.URL + "/")
+
 	client.BaseURL = url
+	client.JWTAuthToken = testJWTAuthToken
 
 	return client, mux, server.URL, server.Close
 }

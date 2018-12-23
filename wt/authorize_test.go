@@ -12,7 +12,7 @@ func TestAuthorize(t *testing.T) {
 
 	mux.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
-		fmt.Fprint(w, fmt.Sprintf(`{"success":true,"token":"%s"}`, testApiKey))
+		fmt.Fprint(w, fmt.Sprintf(`{"success":true,"token":"%s"}`, testJWTAuthToken))
 	})
 
 	err := Authorize(client)
@@ -20,8 +20,8 @@ func TestAuthorize(t *testing.T) {
 		t.Errorf("Authorize returned an error: %v", err)
 	}
 
-	if client.JWTAuthToken != testApiKey {
-		t.Errorf("Client.JWTAuthToken returned %v, want %v", client.JWTAuthToken, testApiKey)
+	if client.JWTAuthToken != testJWTAuthToken {
+		t.Errorf("Client.JWTAuthToken returned %v, want %v", client.JWTAuthToken, testJWTAuthToken)
 	}
 }
 
