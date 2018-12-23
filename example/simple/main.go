@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/tors/wt-go-sdk/wt"
@@ -15,7 +16,12 @@ func main() {
 	client, err := wt.NewAuthorizedClient(apiKey, nil)
 	checkErr(err)
 
-	resp, err := client.Transfer.Create()
+	param := wt.NewTransferParam("First transfer.")
+	param.AddFile("big-bobis.jpg", 195906)
+
+	ctx := context.Background()
+
+	resp, err := client.Transfer.Create(ctx, param)
 	checkErr(err)
 
 	fmt.Printf("%v\n", resp)
