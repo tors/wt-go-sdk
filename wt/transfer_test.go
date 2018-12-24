@@ -105,7 +105,7 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 		`, wantError))
 	})
 
-	req := NewTransferRequest(String("jsfkjasdf.txt"))
+	req := NewTransferRequest(nil)
 
 	_, err := client.Transfer.Create(context.Background(), req)
 
