@@ -46,10 +46,16 @@ func TestTransferService_Create(t *testing.T) {
 
 	mux.HandleFunc("/transfers", getValidTransferHandler(t))
 
-	param := NewTransferParam("")
-	param.AddFile("big-bobis.jpg", 195906)
+	toUpload, err := NewUploadableBytes("longbois.txt", []byte("anthony davis, kevin durant"))
+	if err != nil {
+		t.Errorf("NewUploadableBytes returned an error: %v", err)
+	}
 
-	transfer, err := client.Transfer.Create(context.Background(), param)
+	message := String("This is a message.")
+	req := NewTransferRequest(message)
+	req.Add(toUpload)
+
+	transfer, err := client.Transfer.Create(context.Background(), req)
 
 	if err != nil {
 		t.Errorf("TransferService.Create returned an error: %v", err)
@@ -99,15 +105,9 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 		`, wantError))
 	})
 
-	files := []*M{
-		&M{"something": 1},
-		&M{"bad": 2},
-	}
+	req := NewTransferRequest(String("jsfkjasdf.txt"))
 
-	param := NewTransferParam("")
-	param.Files = files
-
-	_, err := client.Transfer.Create(context.Background(), param)
+	_, err := client.Transfer.Create(context.Background(), req)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")
@@ -115,24 +115,6 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 
 	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
 		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
-	}
-}
-
-func TestTransferService_Create_emptyFiles(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
-
-	mux.HandleFunc("/transfers", getValidTransferHandler(t))
-
-	param := NewTransferParam("")
-	_, err := client.Transfer.Create(context.Background(), param)
-
-	if err == nil {
-		t.Errorf("Expected error to be returned")
-	}
-
-	if err != ErrEmptyFiles {
-		t.Errorf("Error is %+v, want %+v", err, ErrEmptyFiles)
 	}
 }
 
