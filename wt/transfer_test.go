@@ -60,10 +60,7 @@ func TestTransferService_Create(t *testing.T) {
 		ExpiresAt: String("2019-01-01T00:00:00Z"),
 		Files: []*RemoteFile{
 			&RemoteFile{
-				Multipart: &struct {
-					PartNumbers *int64 `json:"part_numbers"`
-					ChunkSize   *int64 `json:"chunk_size"`
-				}{
+				Multipart: &Multipart{
 					PartNumbers: Int64(1),
 					ChunkSize:   Int64(195906),
 				},

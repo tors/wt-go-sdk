@@ -5,17 +5,18 @@ import (
 	"fmt"
 )
 
+type Multipart struct {
+	PartNumbers *int64 `json:"part_numbers"`
+	ChunkSize   *int64 `json:"chunk_size"`
+}
+
 // RemoteFile represents a WeTransfer file object transfer response
 type RemoteFile struct {
-	Multipart *struct {
-		PartNumbers *int64 `json:"part_numbers"`
-		ChunkSize   *int64 `json:"chunk_size"`
-	} `json:"multipart,omitempty"`
-
-	Size *int64  `json:"size"`
-	Type *string `json:"type"`
-	Name *string `json:"name"`
-	ID   *string `json:"id"`
+	Multipart *Multipart `json:"multipart,omitempty"`
+	Size      *int64     `json:"size"`
+	Type      *string    `json:"type"`
+	Name      *string    `json:"name"`
+	ID        *string    `json:"id"`
 }
 
 // Transfer represents the response when a successful transfer
