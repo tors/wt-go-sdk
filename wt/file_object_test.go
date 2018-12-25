@@ -36,6 +36,8 @@ func TestFromString_withEmojis(t *testing.T) {
 		{"filename-🙈.jpg", "filename-.jpg"},
 		{"🙊-filename-🙈.jpg", "-filename-.jpg"},
 		{"🙊-file-🙉-name-🙈.jpg", "-file--name-.jpg"},
+		{"file-$&+,/:;=?@-name&.jpg", "file--name.jpg"},
+		{"file-_.~-name.jpg", "file-_.~-name.jpg"},
 	}
 
 	for _, c := range tests {
