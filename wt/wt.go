@@ -18,9 +18,6 @@ const (
 	contentType    = "application/json"
 )
 
-// M is a shorthand. M is your best friend.
-type M map[string]interface{}
-
 type Client struct {
 	client *http.Client // HTTP client used to communicate with the API.
 
@@ -78,13 +75,13 @@ func NewClient(apiKey string, httpClient *http.Client) (*Client, error) {
 }
 
 // NewAuthorizedClient returns a new WeTransfer authorized API client.
-func NewAuthorizedClient(apiKey string, httpClient *http.Client) (*Client, error) {
+func NewAuthorizedClient(ctx context.Context, apiKey string, httpClient *http.Client) (*Client, error) {
 	client, err := NewClient(apiKey, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = Authorize(client)
+	err = Authorize(ctx, client)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package wt
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -15,7 +16,7 @@ func TestAuthorize(t *testing.T) {
 		fmt.Fprint(w, fmt.Sprintf(`{"success":true,"token":"%s"}`, testJWTAuthToken))
 	})
 
-	err := Authorize(client)
+	err := Authorize(context.Background(), client)
 	if err != nil {
 		t.Errorf("Authorize returned an error: %v", err)
 	}
@@ -37,7 +38,7 @@ func TestAuthorize_forbidden(t *testing.T) {
 		fmt.Fprint(w, fmt.Sprintf(`{"success":false,"message":"%s"}`, wantError))
 	})
 
-	err := Authorize(client)
+	err := Authorize(context.Background(), client)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")

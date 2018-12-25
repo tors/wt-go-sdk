@@ -13,15 +13,15 @@ func main() {
 	fmt.Print("Enter API key: ")
 	fmt.Scanf("%s", &apiKey)
 
-	client, err := wt.NewAuthorizedClient(apiKey, nil)
+	ctx := context.Background()
+
+	client, err := wt.NewAuthorizedClient(ctx, apiKey, nil)
 	checkErr(err)
 
 	message := "My first transfer!"
 
 	object, _ := wt.FromString("abc", "abc.txt")
 	fo := []*wt.FileObject{object}
-
-	ctx := context.Background()
 
 	resp, err := client.Transfer.Create(ctx, &message, fo)
 	checkErr(err)

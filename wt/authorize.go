@@ -4,7 +4,7 @@ import "context"
 
 // Authorize sets the JWT token of the WeTransfer client to issue
 // authorized requests to the API
-func Authorize(c *Client) error {
+func Authorize(ctx context.Context, c *Client) error {
 	req, err := c.NewRequest("POST", "authorize", nil)
 	if err != nil {
 		return err
@@ -15,7 +15,7 @@ func Authorize(c *Client) error {
 		Token   string `json:"token,omitempty"`
 	}
 
-	_, err = c.Do(context.Background(), req, &responseMessage)
+	_, err = c.Do(ctx, req, &responseMessage)
 	if err != nil {
 		return err
 	}
