@@ -36,14 +36,13 @@ func main() {
   apiKey := "<your-api-key>"
   client, _ := wt.NewAuthorizedClient(apiKey, nil)
 
-	message := "My first transfer!"
-
-	object, _ := wt.FromString("abc", "abc.txt")
-	fo := []*wt.FileObject{object}
+  message := "My first transfer!"
+  object, _ := wt.FromString("abc", "abc.txt")
+  fo := []*wt.FileObject{object}
 
   ctx := context.Background()
 
-	resp, _ := client.Transfer.Create(ctx, &message, fo)
+  resp, _ := client.Transfer.Create(ctx, &message, fo)
   fmt.Printf("%+v\n", resp)
 }
 ```
