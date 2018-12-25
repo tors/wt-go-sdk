@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -89,24 +90,13 @@ func fileInfo(name string) (string, int64, error) {
 
 // stripEmojis removes emojis from the string and returns a new non-emojied string.
 func stripEmojis(str string) string {
-	strRunes := []rune(str)
-	lenStrRunes := len(strRunes)
-
-	if lenStrRunes == 0 {
-		return str
-	}
-
-	var newstr []rune
-
-	for i := 0; i < lenStrRunes; i++ {
-		chunk := string(strRunes[i])
-		// Todo: consider dingbats, symbols, arrows, etc.
-		if len(chunk) < 3 {
-			newstr = append(newstr, strRunes[i])
+	var sb strings.Builder
+	for _, c := range str {
+		if utf8.RuneLen(c) < 3 {
+			sb.WriteRune(c)
 		}
 	}
-
-	return string(newstr)
+	return sb.String()
 }
 
 type fileObjectParam struct {
