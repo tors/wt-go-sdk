@@ -16,12 +16,14 @@ func main() {
 	client, err := wt.NewAuthorizedClient(apiKey, nil)
 	checkErr(err)
 
-	param := wt.NewTransferParam("First transfer.")
-	param.AddFile("big-bobis.jpg", 195906)
+	message := "My first transfer!"
+
+	object, _ := wt.FromString("abc", "abc.txt")
+	fo := []*wt.FileObject{object}
 
 	ctx := context.Background()
 
-	resp, err := client.Transfer.Create(ctx, param)
+	resp, err := client.Transfer.Create(ctx, &message, fo)
 	checkErr(err)
 
 	fmt.Printf("%v\n", resp)

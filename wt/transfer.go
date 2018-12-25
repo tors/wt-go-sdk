@@ -2,18 +2,11 @@ package wt
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
-var (
-	ErrBlankFiles   = errors.New("blank files")
-	ErrBlankContent = errors.New("blank content")
-)
-
-// File represents a file object when a successful transfer request
-// is issued.
-type File struct {
+// RemoteFile represents a WeTransfer file object transfer response
+type RemoteFile struct {
 	Multipart *struct {
 		PartNumbers *int64 `json:"part_numbers"`
 		ChunkSize   *int64 `json:"chunk_size"`
@@ -28,28 +21,27 @@ type File struct {
 // Transfer represents the response when a successful transfer
 // request is issued.
 type Transfer struct {
-	Success   *bool   `json:"success"`
-	ID        *string `json:"id"`
-	Message   *string `json:"message,omitempty"`
-	State     *string `json:"state"`
-	ExpiresAt *string `json:"expires_at"`
-	URL       *string `json:"url,omitempty"`
-	Files     []*File `json:"files"`
+	Success   *bool         `json:"success"`
+	ID        *string       `json:"id"`
+	Message   *string       `json:"message,omitempty"`
+	State     *string       `json:"state"`
+	ExpiresAt *string       `json:"expires_at"`
+	URL       *string       `json:"url,omitempty"`
+	Files     []*RemoteFile `json:"files"`
 }
 
 type TransferService service
 
 // Create informs the API that we want to create a transfer (with at
 // least one file). There are no actual files being sent here.
-func (t *TransferService) Create(ctx context.Context, tx Transferable) (*Transfer, error) {
-	if tx.Len() == 0 {
+func (t *TransferService) Create(ctx context.Context, message *string, fo []*FileObject) (*Transfer, error) {
+	if len(fo) == 0 {
 		return nil, ErrBlankFiles
 	}
 
-	param := toTransferableParam(tx)
-	fmt.Printf("%+v", param)
+	tr := newTransferRequest(message, fo)
 
-	req, err := t.client.NewRequest("POST", "transfers", param)
+	req, err := t.client.NewRequest("POST", "transfers", tr)
 	if err != nil {
 		return nil, err
 	}
@@ -80,58 +72,21 @@ func (t *TransferService) Find(ctx context.Context, id string) (*Transfer, error
 	return transfer, nil
 }
 
-// Transferable describes a transfer payload that is sent to the API
-type Transferable interface {
-	Message() *string
-	Files() []Uploadable
-	Len() int
+type transferRequest struct {
+	Message *string            `json:"message"`
+	Files   []*fileObjectParam `json:"files"`
 }
 
-// TransferRequest implements the Transferable interface which is used as
-// parameter to create a successful transfer.
-type TransferRequest struct {
-	message *string
-	files   []Uploadable
-}
+func newTransferRequest(message *string, fo []*FileObject) *transferRequest {
 
-func (t *TransferRequest) Message() *string {
-	return t.message
-}
+	var objects []*fileObjectParam
 
-func (t *TransferRequest) Files() []Uploadable {
-	return t.files
-}
-
-func (t *TransferRequest) Len() int {
-	return len(t.files)
-}
-
-func (t *TransferRequest) Add(u Uploadable) {
-	t.files = append(t.files, u)
-}
-
-func NewTransferRequest(message *string) *TransferRequest {
-	return &TransferRequest{
-		message: message,
-		files:   make([]Uploadable, 0),
-	}
-}
-
-type transferableParam struct {
-	Message *string            `json:"message,omitempty"`
-	Files   []*uploadableParam `json:"files"`
-}
-
-// Converts transferable to JSON marshalable struct
-func toTransferableParam(t Transferable) *transferableParam {
-	tx := &transferableParam{
-		Message: t.Message(),
-		Files:   make([]*uploadableParam, 0),
+	for _, o := range fo {
+		objects = append(objects, toFileObjectParam(o))
 	}
 
-	for _, f := range t.Files() {
-		tx.Files = append(tx.Files, toUploadableParam(f))
+	return &transferRequest{
+		Message: message,
+		Files:   objects,
 	}
-
-	return tx
 }

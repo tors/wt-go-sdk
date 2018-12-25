@@ -8,8 +8,11 @@ import (
 	"testing"
 )
 
-func getValidTransferHandler(t *testing.T) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+func TestTransferService_Create(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
 
 		testMethod(t, r, "POST")
 		testHeader(t, r, "x-api-key", testApiKey)
@@ -31,31 +34,18 @@ func getValidTransferHandler(t *testing.T) func(http.ResponseWriter, *http.Reque
 				  },
 				  "size" : 195906,
 				  "type" : "file",
-				  "name" : "big-bobis.jpg",
+				  "name" : "filename.jpg",
 				  "id" : "random-hash-1"
 				}
 			  ]
 			}
 		`)
-	}
-}
+	})
 
-func TestTransferService_Create(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	object, _ := FromString("This is some content.", "filename.txt")
+	fo := []*FileObject{object}
 
-	mux.HandleFunc("/transfers", getValidTransferHandler(t))
-
-	toUpload, err := NewUploadableBytes("longbois.txt", []byte("anthony davis, kevin durant"))
-	if err != nil {
-		t.Errorf("NewUploadableBytes returned an error: %v", err)
-	}
-
-	message := String("This is a message.")
-	req := NewTransferRequest(message)
-	req.Add(toUpload)
-
-	transfer, err := client.Transfer.Create(context.Background(), req)
+	transfer, err := client.Transfer.Create(context.Background(), nil, fo)
 
 	if err != nil {
 		t.Errorf("TransferService.Create returned an error: %v", err)
@@ -68,8 +58,8 @@ func TestTransferService_Create(t *testing.T) {
 		State:     String("uploading"),
 		URL:       nil,
 		ExpiresAt: String("2019-01-01T00:00:00Z"),
-		Files: []*File{
-			&File{
+		Files: []*RemoteFile{
+			&RemoteFile{
 				Multipart: &struct {
 					PartNumbers *int64 `json:"part_numbers"`
 					ChunkSize   *int64 `json:"chunk_size"`
@@ -79,7 +69,7 @@ func TestTransferService_Create(t *testing.T) {
 				},
 				Size: Int64(195906),
 				Type: String("file"),
-				Name: String("big-bobis.jpg"),
+				Name: String("filename.jpg"),
 				ID:   String("random-hash-1"),
 			},
 		},
@@ -105,9 +95,10 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 		`, wantError))
 	})
 
-	req := NewTransferRequest(nil)
+	object, _ := FromString("abc", "abc.txt")
+	fo := []*FileObject{object}
 
-	_, err := client.Transfer.Create(context.Background(), req)
+	_, err := client.Transfer.Create(context.Background(), nil, fo)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")
@@ -135,7 +126,7 @@ func TestTransferService_Find(t *testing.T) {
 				{
 				  "id": "another-random-hash",
 				  "type": "file",
-				  "name": "big-bobis.jpg",
+				  "name": "filename.jpg",
 				  "multipart": {
 					"chunk_size": 195906,
 					"part_numbers": 1
