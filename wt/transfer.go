@@ -76,6 +76,7 @@ func (t *TransferService) Find(ctx context.Context, id string) (*Transfer, error
 	return transfer, nil
 }
 
+// transferRequest specifies the parameters to create a transfer request
 type transferRequest struct {
 	Message *string            `json:"message"`
 	Files   []*fileObjectParam `json:"files"`
