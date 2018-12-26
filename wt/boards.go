@@ -32,13 +32,13 @@ type Board struct {
 	Items []*Item `json:"items"`
 }
 
-// BoardService handles communication with the board related methods of the
+// BoardsService handles communication with the board related methods of the
 // WeTransfer API
-type BoardService service
+type BoardsService service
 
 // Create creates an empty WeTransfer board. Name is required but description
 // is optional.
-func (t *BoardService) Create(ctx context.Context, name *string, desc *string) (*Board, error) {
+func (t *BoardsService) Create(ctx context.Context, name *string, desc *string) (*Board, error) {
 	if name == nil {
 		return nil, ErrBlankName
 	}
@@ -64,6 +64,6 @@ func (t *BoardService) Create(ctx context.Context, name *string, desc *string) (
 	return board, nil
 }
 
-func (t *BoardService) Find() error {
+func (t *BoardsService) Find() error {
 	return errors.New("not implemented error")
 }

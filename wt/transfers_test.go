@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestTransferService_Create(t *testing.T) {
+func TestTransfersService_Create(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -45,10 +45,10 @@ func TestTransferService_Create(t *testing.T) {
 	object, _ := FromString("This is some content.", "filename.txt")
 	fo := []*FileObject{object}
 
-	transfer, err := client.Transfer.Create(context.Background(), nil, fo)
+	transfer, err := client.Transfers.Create(context.Background(), nil, fo)
 
 	if err != nil {
-		t.Errorf("TransferService.Create returned an error: %v", err)
+		t.Errorf("TransfersService.Create returned an error: %v", err)
 	}
 
 	want := &Transfer{
@@ -73,11 +73,11 @@ func TestTransferService_Create(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(transfer, want) {
-		t.Errorf("TransferService.Create returned %v, want %v", transfer, want)
+		t.Errorf("TransfersService.Create returned %v, want %v", transfer, want)
 	}
 }
 
-func TestTransferService_Create_badRequest(t *testing.T) {
+func TestTransfersService_Create_badRequest(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -95,7 +95,7 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 	object, _ := FromString("abc", "abc.txt")
 	fo := []*FileObject{object}
 
-	_, err := client.Transfer.Create(context.Background(), nil, fo)
+	_, err := client.Transfers.Create(context.Background(), nil, fo)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")
@@ -106,7 +106,7 @@ func TestTransferService_Create_badRequest(t *testing.T) {
 	}
 }
 
-func TestTransferService_Find(t *testing.T) {
+func TestTransfersService_Find(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -135,14 +135,14 @@ func TestTransferService_Find(t *testing.T) {
 		`)
 	})
 
-	_, err := client.Transfer.Find(context.Background(), "random-hash")
+	_, err := client.Transfers.Find(context.Background(), "random-hash")
 
 	if err != nil {
-		t.Errorf("TransferService.Find returned an error: %v", err)
+		t.Errorf("TransfersService.Find returned an error: %v", err)
 	}
 }
 
-func TestTransferService_Find_notFound(t *testing.T) {
+func TestTransfersService_Find_notFound(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -159,7 +159,7 @@ func TestTransferService_Find_notFound(t *testing.T) {
 		`, wantError))
 	})
 
-	_, err := client.Transfer.Find(context.Background(), "random-hash")
+	_, err := client.Transfers.Find(context.Background(), "random-hash")
 
 	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
 		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)

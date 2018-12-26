@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestBoardService_Create(t *testing.T) {
+func TestBoardsService_Create(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -31,7 +31,7 @@ func TestBoardService_Create(t *testing.T) {
 	})
 
 	name := "Not pinterest"
-	board, _ := client.Board.Create(context.Background(), &name, nil)
+	board, _ := client.Boards.Create(context.Background(), &name, nil)
 
 	want := &Board{
 		ID:    String("random-hash"),

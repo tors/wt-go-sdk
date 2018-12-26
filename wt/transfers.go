@@ -32,13 +32,13 @@ type Transfer struct {
 	Files     []*RemoteFile `json:"files"`
 }
 
-// TransferService handles communication with the classic related methods of the
+// TransfersService handles communication with the classic related methods of the
 // WeTransfer API
-type TransferService service
+type TransfersService service
 
 // Create informs the API that we want to create a transfer (with at
 // least one file). There are no actual files being sent here.
-func (t *TransferService) Create(ctx context.Context, message *string, fo []*FileObject) (*Transfer, error) {
+func (t *TransfersService) Create(ctx context.Context, message *string, fo []*FileObject) (*Transfer, error) {
 	if len(fo) == 0 {
 		return nil, ErrBlankFiles
 	}
@@ -60,7 +60,7 @@ func (t *TransferService) Create(ctx context.Context, message *string, fo []*Fil
 }
 
 // Find retrieves transfer information given an ID.
-func (t *TransferService) Find(ctx context.Context, id string) (*Transfer, error) {
+func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, error) {
 	path := fmt.Sprintf("transfers/%v", id)
 
 	req, err := t.client.NewRequest("GET", path, nil)

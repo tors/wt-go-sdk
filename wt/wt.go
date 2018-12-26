@@ -38,8 +38,8 @@ type Client struct {
 	common service
 
 	// Services used for talking to different parts of the API.
-	Transfer *TransferService
-	Board    *BoardService
+	Transfers *TransfersService
+	Boards    *BoardsService
 }
 
 type service struct {
@@ -68,8 +68,8 @@ func NewClient(apiKey string, httpClient *http.Client) (*Client, error) {
 
 	c.common.client = c
 
-	c.Transfer = (*TransferService)(&c.common)
-	c.Board = (*BoardService)(&c.common)
+	c.Transfers = (*TransfersService)(&c.common)
+	c.Boards = (*BoardsService)(&c.common)
 
 	return c, nil
 }

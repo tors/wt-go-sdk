@@ -23,7 +23,7 @@ func main() {
 	object, _ := wt.FromString("abc", "abc.txt")
 	fo := []*wt.FileObject{object}
 
-	resp, err := client.Transfer.Create(ctx, &message, fo)
+	resp, err := client.Transfers.Create(ctx, &message, fo)
 	checkErr(err)
 
 	fmt.Printf("%v\n", resp)
