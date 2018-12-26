@@ -122,3 +122,29 @@ func TestBoardsService_Find(t *testing.T) {
 		t.Errorf("Board.Find returned %+v, want %+v", board, want)
 	}
 }
+
+func TestBoardsService_Find_forbidden(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantError := "You're not a member of this board (123456). See https://developers.wetransfer.com/documentation"
+	mux.HandleFunc("/boards/board-id", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		w.WriteHeader(403)
+
+		fmt.Fprintf(w, `{
+			"success": false,
+			"message": "%s"
+		}`, wantError)
+	})
+
+	_, err := client.Boards.Find(context.Background(), "board-id")
+
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+
+	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
+	}
+}
