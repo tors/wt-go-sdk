@@ -16,7 +16,7 @@ type Item struct {
 	Size      *int64     `json:"size,omitempty"`
 	Type      *string    `json:"type"`
 	Multipart *Multipart `json:"multipart,omitempty"`
-	Meta      *Meta      `json:"meta"`
+	Meta      *Meta      `json:"meta,omitempty"`
 }
 
 type Board struct {
