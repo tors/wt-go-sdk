@@ -46,3 +46,79 @@ func TestBoardsService_Create(t *testing.T) {
 		t.Errorf("Board.Create returned %+v, want %+v", board, want)
 	}
 }
+
+func TestBoardsService_Find(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/boards/board-id", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		fmt.Fprint(w, `
+			{
+			  "id": "board-id",
+			  "state": "processing",
+			  "url": "https://we.tl/b-the-boards-url",
+			  "name": "Little kittens",
+			  "description": null,
+			  "items": [
+				{
+				  "id": "random-hash",
+				  "name": "kittie.gif",
+				  "size": 195906,
+				  "multipart": {
+					"part_numbers": 1,
+					"chunk_size": 195906
+				  },
+				  "type": "file"
+				},
+				{
+				  "id": "different-random-hash",
+				  "url": "https://wetransfer.com",
+				  "meta": {
+					"title": "WeTransfer"
+				  },
+				  "type": "link"
+				}
+			  ]
+			}
+		`)
+	})
+
+	board, err := client.Boards.Find(context.Background(), "board-id")
+
+	if err != nil {
+		t.Errorf("TransfersService.Find returned an error: %v", err)
+	}
+
+	want := &Board{
+		ID:    String("board-id"),
+		Name:  String("Little kittens"),
+		Desc:  nil,
+		State: String("processing"),
+		URL:   String("https://we.tl/b-the-boards-url"),
+		Items: []*Item{
+			&Item{
+				ID:   String("random-hash"),
+				Name: String("kittie.gif"),
+				Size: Int64(195906),
+				Multipart: &Multipart{
+					PartNumbers: Int64(1),
+					ChunkSize:   Int64(195906),
+				},
+				Type: String("file"),
+			},
+			&Item{
+				ID:  String("different-random-hash"),
+				URL: String("https://wetransfer.com"),
+				Meta: &Meta{
+					Title: String("WeTransfer"),
+				},
+				Type: String("link"),
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(board, want) {
+		t.Errorf("Board.Find returned %+v, want %+v", board, want)
+	}
+}

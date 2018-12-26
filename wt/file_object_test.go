@@ -29,7 +29,6 @@ func TestNewFileObject(t *testing.T) {
 }
 
 func TestFromString_withEmojis(t *testing.T) {
-
 	tests := []struct {
 		filename, want string
 	}{
@@ -62,7 +61,6 @@ func TestFromString_empty(t *testing.T) {
 }
 
 func TestFromLocalFile(t *testing.T) {
-
 	tests := []struct {
 		file, name string
 		size       int64

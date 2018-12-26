@@ -2,12 +2,16 @@ package wt
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 // Meta describes information on an item that is of link type
 type Meta struct {
 	Title *string `json:"title,omitempty"`
+}
+
+func (m Meta) String() string {
+	return ToString(m)
 }
 
 // Item represents a board item. A board item can one of two
@@ -22,6 +26,10 @@ type Item struct {
 	Meta      *Meta      `json:"meta,omitempty"`
 }
 
+func (i Item) String() string {
+	return ToString(i)
+}
+
 // Board represents a board object. Each board can have 0 to many board items.
 type Board struct {
 	ID    *string `json:"id"`
@@ -30,6 +38,10 @@ type Board struct {
 	State *string `json:"state"`
 	URL   *string `json:"url"`
 	Items []*Item `json:"items"`
+}
+
+func (b Board) String() string {
+	return ToString(b)
 }
 
 // BoardsService handles communication with the board related methods of the
@@ -64,6 +76,18 @@ func (t *BoardsService) Create(ctx context.Context, name *string, desc *string) 
 	return board, nil
 }
 
-func (t *BoardsService) Find() error {
-	return errors.New("not implemented error")
+func (t *BoardsService) Find(ctx context.Context, id string) (*Board, error) {
+	path := fmt.Sprintf("boards/%v", id)
+
+	req, err := t.client.NewRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	board := &Board{}
+	if _, err = t.client.Do(ctx, req, board); err != nil {
+		return nil, err
+	}
+
+	return board, nil
 }

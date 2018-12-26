@@ -11,6 +11,10 @@ type Multipart struct {
 	ChunkSize   *int64 `json:"chunk_size"`
 }
 
+func (m Multipart) String() string {
+	return ToString(m)
+}
+
 // RemoteFile represents a WeTransfer file object transfer response
 type RemoteFile struct {
 	Multipart *Multipart `json:"multipart,omitempty"`
@@ -18,6 +22,10 @@ type RemoteFile struct {
 	Type      *string    `json:"type"`
 	Name      *string    `json:"name"`
 	ID        *string    `json:"id"`
+}
+
+func (r RemoteFile) String() string {
+	return ToString(r)
 }
 
 // Transfer represents the response when a successful transfer
@@ -30,6 +38,10 @@ type Transfer struct {
 	ExpiresAt *string       `json:"expires_at"`
 	URL       *string       `json:"url,omitempty"`
 	Files     []*RemoteFile `json:"files"`
+}
+
+func (t Transfer) String() string {
+	return ToString(t)
 }
 
 // TransfersService handles communication with the classic related methods of the
@@ -83,7 +95,6 @@ type transferRequest struct {
 }
 
 func newTransferRequest(message *string, fo []*FileObject) *transferRequest {
-
 	var objects []*fileObjectParam
 
 	for _, o := range fo {

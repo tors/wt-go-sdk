@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"unicode/utf8"
 )
 
 var (
@@ -73,7 +72,7 @@ func FromString(content, filename string) (*FileObject, error) {
 		return nil, ErrBlankName
 	}
 
-	newName := sanitizeName(filename)
+	newName := sanitizeString(filename)
 	fo := NewFileObject(newName, reader.Size(), reader)
 
 	return fo, nil
@@ -84,64 +83,8 @@ func fileInfo(name string) (string, int64, error) {
 	if err != nil {
 		return "", 0, err
 	}
-	newName := sanitizeName(info.Name())
+	newName := sanitizeString(info.Name())
 	return newName, info.Size(), nil
-}
-
-func sanitizeName(str string) string {
-	origLen := utf8.RuneCountInString(str)
-	newLen := origLen
-
-	for _, r := range str {
-		if isSanitizable(r) {
-			newLen = newLen - utf8.RuneLen(r)
-		}
-	}
-
-	if origLen == newLen {
-		return str
-	}
-
-	newStr := make([]rune, 0, newLen)
-
-	for _, r := range str {
-		if !isSanitizable(r) {
-			newStr = append(newStr, r)
-		}
-	}
-
-	return string(newStr)
-}
-
-func isSanitizable(r rune) bool {
-	return isSpecial(r) || isEmoji(r)
-}
-
-// Emojis rune range from WhatsApp stickers Swift repo
-// https://github.com/WhatsApp/stickers/blob/master/iOS/WAStickersThirdParty/Sticker.swift#L42-L48
-func isEmoji(r rune) bool {
-	switch {
-	case r >= 0x1F600 && r <= 0x1F64F, // Emoticons
-		r >= 0x1F300 && r <= 0x1F5FF, // Misc Symbols and Pictographs
-		r >= 0x1F680 && r <= 0x1F6FF, // Transport and maps
-		r >= 0x2600 && r <= 0x26FF,   // Misc symbols
-		r >= 0x2700 && r <= 0x27BF,   // Dingbats
-		r >= 0x1F1E6 && r <= 0x1F1FF, // Flags
-		r >= 0x1F900 && r <= 0x1F9FF: // Supplemental Symbols and Pictographs
-		return true
-	default:
-		return false
-	}
-}
-
-func isSpecial(c rune) bool {
-	switch c {
-	case '-', '_', '.', '~':
-		return false
-	case '$', '&', '+', ',', '/', ':', ';', '=', '?', '@':
-		return true
-	}
-	return false
 }
 
 type fileObjectParam struct {
