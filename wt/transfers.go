@@ -17,11 +17,27 @@ func (m Multipart) String() string {
 
 // RemoteFile represents a WeTransfer file object transfer response
 type RemoteFile struct {
-	Multipart *Multipart `json:"multipart,omitempty"`
+	Multipart *Multipart `json:"multipart"`
 	Size      *int64     `json:"size"`
 	Type      *string    `json:"type"`
 	Name      *string    `json:"name"`
 	ID        *string    `json:"id"`
+}
+
+// PartNumbers retrieves part numbers of a multipart file. It returns 0
+// when multipart is nil
+func (r RemoteFile) GetPartNumbers() int64 {
+	if r.Multipart == nil || r.Multipart.PartNumbers == nil {
+		return 0
+	}
+	return *r.Multipart.PartNumbers
+}
+
+func (r RemoteFile) GetID() string {
+	if r.ID == nil {
+		return ""
+	}
+	return *r.ID
 }
 
 func (r RemoteFile) String() string {
@@ -42,6 +58,29 @@ type Transfer struct {
 
 func (t Transfer) String() string {
 	return ToString(t)
+}
+
+// UploadURL represents the response once a request for the URL destination of
+// the local file
+type UploadURL struct {
+	Success *bool   `json:"success"`
+	URL     *string `json:"url"`
+	tid     string  `json:"-"`
+	fid     string  `json:"-"`
+	partNum int64   `json:"-"`
+	err     error   `json:"-"`
+}
+
+func (u *UploadURL) SetError(err error) {
+	u.err = err
+}
+
+func (u UploadURL) GetError() error {
+	return u.err
+}
+
+func (u UploadURL) String() string {
+	return ToString(u)
 }
 
 // TransfersService handles communication with the classic related methods of the
@@ -86,6 +125,33 @@ func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, erro
 	}
 
 	return transfer, nil
+}
+
+func (t *TransfersService) getAllUploadURL(ctx context.Context, tid string, file *RemoteFile) []*UploadURL {
+	var all []*UploadURL
+
+	for no := int64(1); no <= file.GetPartNumbers(); no++ {
+		uurl := t.getUploadURL(ctx, tid, file.GetID(), no)
+		all = append(all, uurl)
+	}
+
+	return all
+}
+
+func (t *TransfersService) getUploadURL(ctx context.Context, tid, fid string, partNum int64) *UploadURL {
+	path := fmt.Sprintf("transfers/%s/files/%s/upload-url/%d", tid, fid, partNum)
+	req, err := t.client.NewRequest("POST", path, nil)
+	if err != nil {
+		uurl := &UploadURL{tid: tid, fid: fid, partNum: partNum}
+		uurl.SetError(err)
+		return uurl
+	}
+	var uurl UploadURL
+	if _, err = t.client.Do(ctx, req, &uurl); err != nil {
+		uurl = UploadURL{tid: tid, fid: fid, partNum: partNum}
+		uurl.SetError(err)
+	}
+	return &uurl
 }
 
 // transferRequest specifies the parameters to create a transfer request

@@ -165,3 +165,65 @@ func TestTransfersService_Find_notFound(t *testing.T) {
 		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
 	}
 }
+
+func TestTransferService_getAllUploadURL(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/transfers/1/files/1/upload-url/1", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"success": true, "url": "https://s3-put-url-111"}`)
+	})
+	mux.HandleFunc("/transfers/1/files/1/upload-url/2", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"success": true, "url": "https://s3-put-url-112"}`)
+	})
+
+	remoteFile := &RemoteFile{
+		Multipart: &Multipart{
+			PartNumbers: Int64(2),
+			ChunkSize:   Int64(200),
+		},
+		ID: String("1"),
+	}
+
+	want := []*UploadURL{
+		&UploadURL{
+			Success: Bool(true),
+			URL:     String("https://s3-put-url-111"),
+			err:     nil,
+		},
+		&UploadURL{
+			Success: Bool(true),
+			URL:     String("https://s3-put-url-112"),
+			err:     nil,
+		},
+	}
+
+	got := client.Transfers.getAllUploadURL(context.Background(), "1", remoteFile)
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Transfers.getAllUploadURL returned %+v, want %+v", got, want)
+	}
+}
+
+func TestTransferService_getUploadURL_notFound(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantError := "Invalid transfer or file id."
+	mux.HandleFunc("/transfers/2/files/2/upload-url/1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, `
+			{
+				"success" : false,
+				"message" : "%v"
+			}
+		`, wantError)
+	})
+
+	uurl := client.Transfers.getUploadURL(context.Background(), "2", "2", int64(1))
+	err := uurl.GetError()
+
+	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
+	}
+}
