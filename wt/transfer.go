@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Multipart is info on the chunks of data to be uploaded
 type Multipart struct {
 	PartNumbers *int64 `json:"part_numbers"`
 	ChunkSize   *int64 `json:"chunk_size"`
@@ -31,6 +32,8 @@ type Transfer struct {
 	Files     []*RemoteFile `json:"files"`
 }
 
+// TransferService handles communication with the classic related methods of the
+// WeTransfer API
 type TransferService service
 
 // Create informs the API that we want to create a transfer (with at
