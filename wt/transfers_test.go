@@ -84,12 +84,12 @@ func TestTransfersService_Create_badRequest(t *testing.T) {
 	wantError := "Bad request"
 	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		fmt.Fprint(w, fmt.Sprintf(`
+		fmt.Fprintf(w, `
 			{
 				"success": false,
 				"message": "%v"
 			}
-		`, wantError))
+		`, wantError)
 	})
 
 	object, _ := FromString("abc", "abc.txt")
@@ -151,12 +151,12 @@ func TestTransfersService_Find_notFound(t *testing.T) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		w.WriteHeader(404)
-		fmt.Fprint(w, fmt.Sprintf(`
+		fmt.Fprintf(w, `
 			{
 			  "success" : false,
 			  "message": "%v"
 			}
-		`, wantError))
+		`, wantError)
 	})
 
 	_, err := client.Transfers.Find(context.Background(), "random-hash")

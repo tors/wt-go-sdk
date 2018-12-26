@@ -13,7 +13,7 @@ func TestAuthorize(t *testing.T) {
 
 	mux.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
-		fmt.Fprint(w, fmt.Sprintf(`{"success":true,"token":"%s"}`, testJWTAuthToken))
+		fmt.Fprintf(w, `{"success":true,"token":"%s"}`, testJWTAuthToken)
 	})
 
 	err := Authorize(context.Background(), client)
@@ -35,7 +35,7 @@ func TestAuthorize_forbidden(t *testing.T) {
 	mux.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
 		w.WriteHeader(403)
-		fmt.Fprint(w, fmt.Sprintf(`{"success":false,"message":"%s"}`, wantError))
+		fmt.Fprintf(w, `{"success":false,"message":"%s"}`, wantError)
 	})
 
 	err := Authorize(context.Background(), client)
