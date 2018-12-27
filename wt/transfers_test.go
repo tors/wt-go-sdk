@@ -201,23 +201,27 @@ func TestTransferService_getAllUploadURL(t *testing.T) {
 	}
 }
 
-func TestTransferService_getUploadURL_notFound(t *testing.T) {
+func TestTransferService_getUploadURL_fail(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
-	wantError := "Invalid transfer or file id."
-	mux.HandleFunc("/transfers/2/files/2/upload-url/1", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(404)
-		fmt.Fprintf(w, `
-			{
-				"success" : false,
-				"message" : "%v"
-			}
-		`, wantError)
-	})
+	tests := []struct {
+		url       string
+		httpCode  int
+		partNum   int64
+		wantError string
+	}{
+		{"/transfers/2/files/2/upload-url/1", 404, int64(1), "Invalid transfer or file id."},
+		{"/transfers/2/files/2/upload-url/0", 417, int64(0), "Chunk numbers are 1-based"},
+	}
 
-	uurl := client.Transfers.getUploadURL(context.Background(), "2", "2", int64(1))
-	err := uurl.GetError()
-
-	testErrorResponse(t, err, wantError)
+	for _, g := range tests {
+		mux.HandleFunc(g.url, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(g.httpCode)
+			fmt.Fprintf(w, `{"success":false,"message":"%v"}`, g.wantError)
+		})
+		uurl := client.Transfers.getUploadURL(context.Background(), "2", "2", g.partNum)
+		err := uurl.GetError()
+		testErrorResponse(t, err, g.wantError)
+	}
 }
