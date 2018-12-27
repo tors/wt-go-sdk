@@ -163,7 +163,7 @@ func TestTransfersService_Find_notFound(t *testing.T) {
 	testErrorResponse(t, err, wantError)
 }
 
-func TestTransferService_getAllUploadURL(t *testing.T) {
+func TestTransferService_GetAllUploadURL(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -197,14 +197,14 @@ func TestTransferService_getAllUploadURL(t *testing.T) {
 		},
 	}
 
-	got := client.Transfers.getAllUploadURL(context.Background(), "1", remoteFile)
+	got := client.Transfers.GetAllUploadURL(context.Background(), "1", remoteFile)
 
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Transfers.getAllUploadURL returned %+v, want %+v", got, want)
+		t.Errorf("Transfers.GetAllUploadURL returned %+v, want %+v", got, want)
 	}
 }
 
-func TestTransferService_getUploadURL_fail(t *testing.T) {
+func TestTransferService_GetUploadURL_fail(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -223,7 +223,7 @@ func TestTransferService_getUploadURL_fail(t *testing.T) {
 			w.WriteHeader(g.httpCode)
 			fmt.Fprintf(w, `{"success":false,"message":"%v"}`, g.wantError)
 		})
-		uurl := client.Transfers.getUploadURL(context.Background(), "2", "2", g.partNum)
+		uurl := client.Transfers.GetUploadURL(context.Background(), "2", "2", g.partNum)
 		err := uurl.GetError()
 		testErrorResponse(t, err, g.wantError)
 	}

@@ -128,7 +128,11 @@ func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, erro
 	return transfer, nil
 }
 
-func (t *TransfersService) getAllUploadURL(ctx context.Context, tid string, file *RemoteFile) []*UploadURL {
+// GetAllUploadURL retrieves all upload URLs as remote destination addresses
+// for the file. A file can be divided into parts and is uploaded by chunks.
+// Each part has it's own destination address which is a presigned S3 URL. The
+// S3 URL will expire after 1 hour.
+func (t *TransfersService) GetAllUploadURL(ctx context.Context, tid string, file *RemoteFile) []*UploadURL {
 	var all []*UploadURL
 
 	var wg sync.WaitGroup
@@ -138,7 +142,7 @@ func (t *TransfersService) getAllUploadURL(ctx context.Context, tid string, file
 		wg.Add(1)
 		go func(n int64) {
 			defer wg.Done()
-			uurl := t.getUploadURL(ctx, tid, file.GetID(), n)
+			uurl := t.GetUploadURL(ctx, tid, file.GetID(), n)
 			mux.Lock()
 			all = append(all, uurl)
 			mux.Unlock()
@@ -150,7 +154,10 @@ func (t *TransfersService) getAllUploadURL(ctx context.Context, tid string, file
 	return all
 }
 
-func (t *TransfersService) getUploadURL(ctx context.Context, tid, fid string, partNum int64) *UploadURL {
+// GetUploadURL retrieves an upload URL as remote destination address for the
+// file. The URL that is returned comes in a form of presigned S3 URL which
+// is only valid for an hour.
+func (t *TransfersService) GetUploadURL(ctx context.Context, tid, fid string, partNum int64) *UploadURL {
 	path := fmt.Sprintf("transfers/%s/files/%s/upload-url/%d", tid, fid, partNum)
 	req, err := t.client.NewRequest("POST", path, nil)
 	if err != nil {
