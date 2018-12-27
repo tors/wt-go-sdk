@@ -144,7 +144,5 @@ func TestBoardsService_Find_forbidden(t *testing.T) {
 		t.Errorf("Expected error to be returned")
 	}
 
-	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
-		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
-	}
+	testErrorResponse(t, err, wantError)
 }

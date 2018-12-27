@@ -101,9 +101,7 @@ func TestTransfersService_Create_badRequest(t *testing.T) {
 		t.Errorf("Expected error to be returned")
 	}
 
-	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
-		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
-	}
+	testErrorResponse(t, err, wantError)
 }
 
 func TestTransfersService_Find(t *testing.T) {
@@ -161,9 +159,7 @@ func TestTransfersService_Find_notFound(t *testing.T) {
 
 	_, err := client.Transfers.Find(context.Background(), "random-hash")
 
-	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
-		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
-	}
+	testErrorResponse(t, err, wantError)
 }
 
 func TestTransferService_getAllUploadURL(t *testing.T) {
@@ -223,7 +219,5 @@ func TestTransferService_getUploadURL_notFound(t *testing.T) {
 	uurl := client.Transfers.getUploadURL(context.Background(), "2", "2", int64(1))
 	err := uurl.GetError()
 
-	if err, ok := err.(*ErrorResponse); !ok && err.Message != wantError {
-		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, wantError)
-	}
+	testErrorResponse(t, err, wantError)
 }

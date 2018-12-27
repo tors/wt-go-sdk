@@ -43,6 +43,12 @@ func testHeader(t *testing.T, r *http.Request, header string, want string) {
 	}
 }
 
+func testErrorResponse(t *testing.T, err error, message string) {
+	if err, ok := err.(*ErrorResponse); !ok && err.Message != message {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, message)
+	}
+}
+
 func TestNewClient(t *testing.T) {
 	c, _ := NewClient("abc", nil)
 
