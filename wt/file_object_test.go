@@ -71,8 +71,7 @@ func TestFromLocalFile(t *testing.T) {
 	}
 
 	for _, c := range tests {
-		object, closer, _ := FromLocalFile(c.file)
-		defer closer()
+		object, _ := FromLocalFile(c.file)
 
 		if object.Name() != c.name {
 			t.Errorf("Name returned %v, want %v", object.Name(), c.name)

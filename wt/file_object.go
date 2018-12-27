@@ -16,9 +16,10 @@ var (
 
 // FileObject represents a file object in WeTransfer
 type FileObject struct {
-	name   string
-	size   int64
-	reader io.Reader
+	name    string
+	size    int64
+	reader  io.Reader
+	closeFn func() error
 }
 
 func (f *FileObject) Size() int64 {
@@ -33,6 +34,17 @@ func (f *FileObject) Reader() io.Reader {
 	return f.reader
 }
 
+func (f *FileObject) Close() error {
+	if f == nil || f.closeFn == nil {
+		return nil
+	}
+	return f.closeFn()
+}
+
+func (f *FileObject) SetClose(fn func() error) {
+	f.closeFn = fn
+}
+
 func NewFileObject(name string, size int64, r io.Reader) *FileObject {
 	return &FileObject{
 		name:   name,
@@ -43,21 +55,22 @@ func NewFileObject(name string, size int64, r io.Reader) *FileObject {
 
 // FromLocalFile performs an os.Stat on the path and returns a WeTransfer file
 // object.
-func FromLocalFile(path string) (*FileObject, func() error, error) {
+func FromLocalFile(path string) (*FileObject, error) {
 	name, size, err := fileInfo(path)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	reader := bufio.NewReader(f)
 	fo := NewFileObject(name, size, reader)
+	fo.SetClose(f.Close)
 
-	return fo, f.Close, nil
+	return fo, nil
 }
 
 // FromString returns a WeTransfer file object given a string and a filename
