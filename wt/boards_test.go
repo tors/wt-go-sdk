@@ -31,7 +31,7 @@ func TestBoardsService_Create(t *testing.T) {
 	})
 
 	name := "Not pinterest"
-	board, _ := client.Boards.Create(context.Background(), &name, nil)
+	board, _ := client.Boards.Create(context.Background(), name, nil)
 
 	want := &Board{
 		ID:    String("random-hash"),

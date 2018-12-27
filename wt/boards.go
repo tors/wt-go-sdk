@@ -50,13 +50,13 @@ type BoardsService service
 
 // Create creates an empty WeTransfer board. Name is required but description
 // is optional.
-func (t *BoardsService) Create(ctx context.Context, name *string, desc *string) (*Board, error) {
-	if name == nil {
+func (t *BoardsService) Create(ctx context.Context, name string, desc *string) (*Board, error) {
+	if name == "" {
 		return nil, ErrBlankName
 	}
 
 	param := &struct {
-		Name *string `json:"name"`
+		Name string  `json:"name"`
 		Desc *string `json:"description"`
 	}{
 		Name: name,
