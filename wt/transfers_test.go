@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestTransfersService_Create(t *testing.T) {
@@ -170,6 +171,8 @@ func TestTransferService_getAllUploadURL(t *testing.T) {
 		fmt.Fprint(w, `{"success": true, "url": "https://s3-put-url-111"}`)
 	})
 	mux.HandleFunc("/transfers/1/files/1/upload-url/2", func(w http.ResponseWriter, r *http.Request) {
+		// Put arbitrary delay so that we can perform deep equal in order
+		time.Sleep(time.Millisecond * 10)
 		fmt.Fprint(w, `{"success": true, "url": "https://s3-put-url-112"}`)
 	})
 

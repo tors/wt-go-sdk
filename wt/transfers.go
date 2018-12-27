@@ -3,6 +3,7 @@ package wt
 import (
 	"context"
 	"fmt"
+	"sync"
 )
 
 // Multipart is info on the chunks of data to be uploaded
@@ -130,10 +131,21 @@ func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, erro
 func (t *TransfersService) getAllUploadURL(ctx context.Context, tid string, file *RemoteFile) []*UploadURL {
 	var all []*UploadURL
 
+	var wg sync.WaitGroup
+	mux := &sync.Mutex{}
+
 	for no := int64(1); no <= file.GetPartNumbers(); no++ {
-		uurl := t.getUploadURL(ctx, tid, file.GetID(), no)
-		all = append(all, uurl)
+		wg.Add(1)
+		go func(n int64) {
+			defer wg.Done()
+			uurl := t.getUploadURL(ctx, tid, file.GetID(), n)
+			mux.Lock()
+			all = append(all, uurl)
+			mux.Unlock()
+		}(no)
 	}
+
+	wg.Wait()
 
 	return all
 }
