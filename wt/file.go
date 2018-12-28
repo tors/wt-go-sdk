@@ -85,6 +85,20 @@ type FileObject struct {
 	Size *int64  `json:"size"`
 }
 
+func (f *FileObject) GetName() string {
+	if f == nil || f.Name == nil {
+		return ""
+	}
+	return *f.Name
+}
+
+func (f *FileObject) GetSize() int64 {
+	if f == nil || f.Size == nil {
+		return int64(0)
+	}
+	return *f.Size
+}
+
 func NewFileObject(name string, size int64) *FileObject {
 	return &FileObject{
 		Name: &name,
