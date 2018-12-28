@@ -5,6 +5,25 @@ import (
 	"testing"
 )
 
+func Test_sanitizeString(t *testing.T) {
+	tests := []struct {
+		got, want string
+	}{
+		{"filename-🙈.jpg", "filename-.jpg"},
+		{"🙊-filename-🙈.jpg", "-filename-.jpg"},
+		{"🙊-file-🙉-name-🙈.jpg", "-file--name-.jpg"},
+		{"file-$&+,/:;=?@-name&.jpg", "file--name.jpg"},
+		{"file-_.~-name.jpg", "file-_.~-name.jpg"},
+	}
+
+	for _, c := range tests {
+		str := sanitizeString(c.got)
+		if str != c.want {
+			t.Errorf("sanitizeString returned %v, want %v", str, c.want)
+		}
+	}
+}
+
 func TestToString_structs(t *testing.T) {
 	var tests = []struct {
 		got  interface{}
