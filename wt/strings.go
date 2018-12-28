@@ -71,9 +71,9 @@ func isSpecial(c rune) bool {
 
 // ToString ouputs a string representation of WeTransfer types.
 func ToString(m interface{}) string {
-	var buf bytes.Buffer
+	buf := new(bytes.Buffer)
 	v := reflect.ValueOf(m)
-	toString(&buf, v)
+	toString(buf, v)
 	return buf.String()
 }
 

@@ -12,7 +12,7 @@ func TestToString_structs(t *testing.T) {
 	}{
 		{Board{ID: String("id"), Name: String("board1"), Items: []*Item{}}, `wt.Board{ID:"id", Name:"board1", Items:[]}`},
 		{Multipart{PartNumbers: Int64(1), ChunkSize: Int64(2)}, `wt.Multipart{PartNumbers:1, ChunkSize:2}`},
-		{RemoteFile{Size: Int64(2), Type: String("a"), ID: String("c")}, `wt.RemoteFile{Size:2, Type:"a", ID:"c"}`},
+		{File{Size: Int64(2), Type: String("a"), ID: String("c")}, `wt.File{Size:2, Type:"a", ID:"c"}`},
 	}
 
 	for i, tt := range tests {

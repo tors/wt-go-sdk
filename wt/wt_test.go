@@ -1,9 +1,13 @@
 package wt
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"testing"
 )
 
@@ -31,22 +35,50 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	return client, mux, server.URL, server.Close
 }
 
+// testHeader checks http methods
 func testMethod(t *testing.T, r *http.Request, want string) {
 	if got := r.Method; got != want {
 		t.Errorf("Request method: %v, want %v", got, want)
 	}
 }
 
+// testHeader checks for values set in the http header
 func testHeader(t *testing.T, r *http.Request, header string, want string) {
 	if got := r.Header.Get(header); got != want {
 		t.Errorf("Header.Get(%q) returned %q, want %q", header, got, want)
 	}
 }
 
+// testErrorResponse checks the message of an ErrorResponse. If it matches that
+// given message string, then it passes.
 func testErrorResponse(t *testing.T, err error, message string) {
 	if err, ok := err.(*ErrorResponse); !ok && err.Message != message {
 		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, message)
 	}
+}
+
+// openTestFile creates a new file with the given name and content for testing.
+func openTestFile(name, content string) (file *os.File, dir string, err error) {
+	dir, err = ioutil.TempDir("", "wt-go-sdk")
+	if err != nil {
+		return nil, dir, err
+	}
+
+	file, err = os.OpenFile(path.Join(dir, name), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return nil, dir, err
+	}
+
+	fmt.Fprint(file, content)
+
+	// close and re-open the file to keep file.Stat() happy
+	file.Close()
+	file, err = os.Open(file.Name())
+	if err != nil {
+		return nil, dir, err
+	}
+
+	return file, dir, err
 }
 
 func TestNewClient(t *testing.T) {
