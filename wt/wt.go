@@ -42,6 +42,9 @@ type Client struct {
 	// Services used for talking to different parts of the API.
 	Transfers *TransfersService
 	Boards    *BoardsService
+
+	// Service that allow for multipart file uploads
+	uploader *uploaderService
 }
 
 type service struct {
@@ -72,6 +75,7 @@ func NewClient(apiKey string, httpClient *http.Client) (*Client, error) {
 
 	c.Transfers = (*TransfersService)(&c.common)
 	c.Boards = (*BoardsService)(&c.common)
+	c.uploader = (*uploaderService)(&c.common)
 
 	return c, nil
 }

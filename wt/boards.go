@@ -40,6 +40,13 @@ type Board struct {
 	Items []*Item `json:"items"`
 }
 
+func (b *Board) GetID() string {
+	if b == nil || b.ID == nil {
+		return ""
+	}
+	return *b.ID
+}
+
 func (b Board) String() string {
 	return ToString(b)
 }

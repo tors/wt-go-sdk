@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestTransfersService_CreateFromFile(t *testing.T) {
+func TestTransfersService_createTransfer(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -45,7 +45,7 @@ func TestTransfersService_CreateFromFile(t *testing.T) {
 	file, _, err := openTestFile("kitty.txt", "meow")
 	defer file.Close()
 
-	transfer, err := client.Transfers.CreateFromFile(context.Background(), file.Name(), nil)
+	transfer, err := client.Transfers.createTransfer(context.Background(), file.Name(), nil)
 
 	if err != nil {
 		t.Errorf("TransfersService.Create returned an error: %v", err)
@@ -77,7 +77,7 @@ func TestTransfersService_CreateFromFile(t *testing.T) {
 	}
 }
 
-func TestTransfersService_CreateFromFile_badRequest(t *testing.T) {
+func TestTransfersService_createTransfer_badRequest(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -95,7 +95,7 @@ func TestTransfersService_CreateFromFile_badRequest(t *testing.T) {
 	file, _, err := openTestFile("kitty.txt", "meow")
 	defer file.Close()
 
-	_, err = client.Transfers.CreateFromFile(context.Background(), file.Name(), nil)
+	_, err = client.Transfers.createTransfer(context.Background(), file.Name(), nil)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")
@@ -160,55 +160,4 @@ func TestTransfersService_Find_notFound(t *testing.T) {
 	_, err := client.Transfers.Find(context.Background(), "random-hash")
 
 	testErrorResponse(t, err, wantError)
-}
-
-func TestTransferService_GetUploadURL(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
-
-	mux.HandleFunc("/transfers/1/files/1/upload-url/1", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"success": true, "url": "https://s3-1"}`)
-	})
-	mux.HandleFunc("/transfers/1/files/1/upload-url/2", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"success": true, "url": "https://s3-2"}`)
-	})
-
-	tests := []struct {
-		in  int64
-		out *UploadURL
-	}{
-		{int64(1), &UploadURL{Success: Bool(true), URL: String("https://s3-1")}},
-		{int64(2), &UploadURL{Success: Bool(true), URL: String("https://s3-2")}},
-	}
-
-	for _, test := range tests {
-		got, _ := client.Transfers.GetUploadURL(context.Background(), "1", "1", test.in)
-		if !reflect.DeepEqual(got, test.out) {
-			t.Errorf("Transfers.GetUploadURL returned %+v, want %+v", got, test.out)
-		}
-	}
-}
-
-func TestTransferService_GetUploadURL_fail(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
-
-	tests := []struct {
-		url       string
-		httpCode  int
-		partNum   int64
-		wantError string
-	}{
-		{"/transfers/2/files/2/upload-url/1", 404, int64(1), "Invalid transfer or file id."},
-		{"/transfers/2/files/2/upload-url/0", 417, int64(0), "Chunk numbers are 1-based"},
-	}
-
-	for _, g := range tests {
-		mux.HandleFunc(g.url, func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(g.httpCode)
-			fmt.Fprintf(w, `{"success":false,"message":"%v"}`, g.wantError)
-		})
-		_, err := client.Transfers.GetUploadURL(context.Background(), "2", "2", g.partNum)
-		testErrorResponse(t, err, g.wantError)
-	}
 }

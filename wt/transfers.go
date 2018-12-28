@@ -1,10 +1,8 @@
 package wt
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -73,7 +71,7 @@ func (t *TransfersService) Create(ctx context.Context, in interface{}, message *
 	var tid string
 	switch v := in.(type) {
 	case string:
-		ts, err := t.CreateFromFile(ctx, v, message)
+		ts, err := t.createTransfer(ctx, v, message)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +79,7 @@ func (t *TransfersService) Create(ctx context.Context, in interface{}, message *
 		file := ts.Files[0]
 		local, _ := os.Open(v)
 		defer local.Close()
-		err = t.uploadFile(ctx, tid, local, file)
+		err = t.client.uploader.uploadFile(ctx, ts, local, file)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +88,7 @@ func (t *TransfersService) Create(ctx context.Context, in interface{}, message *
 	return t.Find(ctx, tid)
 }
 
-func (t *TransfersService) CreateFromFile(ctx context.Context, path string, message *string) (*Transfer, error) {
+func (t *TransfersService) createTransfer(ctx context.Context, path string, message *string) (*Transfer, error) {
 	name, size, err := fileInfo(path)
 	if err != nil {
 		return nil, err
@@ -110,68 +108,6 @@ func (t *TransfersService) CreateFromFile(ctx context.Context, path string, mess
 	}
 
 	return &ts, nil
-}
-
-func (t *TransfersService) uploadFile(ctx context.Context, tid string, localFile *os.File, file *File) error {
-	fid := file.GetID()
-	name := file.GetName()
-	partNum, chunkSize := file.GetMultipartValues()
-
-	reader := bufio.NewReader(localFile)
-	errors := NewErrors(fmt.Sprintf(`file %v, %v errors`, fid, name))
-
-	buf := make([]byte, 0, chunkSize)
-
-	var err error
-	var n int
-
-	for i := int64(1); i <= partNum; i++ {
-		n, err = reader.Read(buf[:chunkSize])
-		if n == 0 {
-			break
-		}
-		buf = buf[:n]
-		uurl, nerr := t.GetUploadURL(ctx, tid, fid, i)
-		if nerr != nil {
-			errors.Append(fmt.Errorf(`request upload URL part %v error, %v`, i, nerr.Error()))
-			continue
-		}
-		nerr = t.uploadBytes(ctx, uurl, buf)
-		if nerr != nil {
-			errors.Append(fmt.Errorf(`upload part %v error, %v`, i, nerr.Error()))
-		}
-	}
-
-	if err != nil && err != io.EOF {
-		return err
-	}
-
-	if errors.Len() > 0 {
-		return errors
-	}
-
-	return nil
-}
-
-func (t *TransfersService) uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
-	// todo
-	return nil
-}
-
-func (t *TransfersService) GetUploadURL(ctx context.Context, tid, fid string, partNum int64) (*UploadURL, error) {
-	path := fmt.Sprintf("transfers/%s/files/%s/upload-url/%d", tid, fid, partNum)
-
-	req, err := t.client.NewRequest("POST", path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var uurl UploadURL
-	if _, err = t.client.Do(ctx, req, &uurl); err != nil {
-		return nil, err
-	}
-
-	return &uurl, nil
 }
 
 // Find retrieves transfer information given an ID.
