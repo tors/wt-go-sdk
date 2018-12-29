@@ -1,11 +1,9 @@
 package wt
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
-	"os"
 )
 
 // identifiable describes an object that can return an id
@@ -17,12 +15,16 @@ type identifiable interface {
 // and boards
 type uploaderService service
 
-func (u *uploaderService) uploadFile(ctx context.Context, id identifiable, l *os.File, f *File) error {
-	fid := f.GetID()
-	name := f.GetName()
-	partNum, chunkSize := f.GetMultipartValues()
+func (u *uploaderService) uploadFile(ctx context.Context, idx identifiable, ft *fileTransfer) error {
+	fid := ft.getID()
+	name := ft.getName()
+	partNum, chunkSize := ft.getMulipartValues()
 
-	reader := bufio.NewReader(l)
+	reader, rerr := ft.getReader()
+	if rerr != nil {
+		return rerr
+	}
+
 	errors := NewErrors(fmt.Sprintf(`file %v, %v errors`, fid, name))
 
 	buf := make([]byte, 0, chunkSize)
@@ -36,7 +38,7 @@ func (u *uploaderService) uploadFile(ctx context.Context, id identifiable, l *os
 			break
 		}
 		buf = buf[:n]
-		uurl, nerr := u.getUploadURL(ctx, id, fid, i)
+		uurl, nerr := u.getUploadURL(ctx, idx, fid, i)
 		if nerr != nil {
 			errors.Append(fmt.Errorf(`request upload URL part %v error, %v`, i, nerr.Error()))
 			continue
@@ -62,10 +64,10 @@ func (t *uploaderService) uploadBytes(ctx context.Context, uurl *UploadURL, b []
 	return nil
 }
 
-func (t *uploaderService) getUploadURL(ctx context.Context, id identifiable, fid string, partNum int64) (*UploadURL, error) {
+func (t *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fid string, partNum int64) (*UploadURL, error) {
 	var pathPrefix string
 
-	switch id.(type) {
+	switch idx.(type) {
 	case *Transfer:
 		pathPrefix = "transfers"
 	case *Board:
@@ -74,7 +76,7 @@ func (t *uploaderService) getUploadURL(ctx context.Context, id identifiable, fid
 		return nil, fmt.Errorf("identifiable type not supported")
 	}
 
-	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, id.GetID(), fid, partNum)
+	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, idx.GetID(), fid, partNum)
 
 	req, err := t.client.NewRequest("POST", path, nil)
 	if err != nil {

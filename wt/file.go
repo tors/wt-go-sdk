@@ -1,6 +1,10 @@
 package wt
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
 	"os"
 )
 
@@ -11,13 +15,6 @@ type File struct {
 	Type      *string    `json:"type"`
 	Name      *string    `json:"name"`
 	ID        *string    `json:"id"`
-}
-
-func (f *File) GetMultipartValues() (partNum int64, chunkSize int64) {
-	if f == nil || f.Multipart == nil {
-		return int64(0), int64(0)
-	}
-	return f.Multipart.GetPartNumbers(), f.Multipart.GetChunkSize()
 }
 
 func (f *File) GetName() string {
@@ -137,6 +134,67 @@ type fileObject struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
 }
+
+// fileTransfer has all the data needed to request for upload URLs
+type fileTransfer struct {
+	tx   Transferable
+	file *File
+}
+
+func (f *fileTransfer) getID() string {
+	return f.file.GetID()
+}
+
+func (f *fileTransfer) getName() string {
+	return f.file.GetName()
+}
+
+func (f *fileTransfer) getMulipartValues() (int64, int64) {
+	if f == nil || f.file == nil || f.file.Multipart == nil {
+		return int64(0), int64(0)
+	}
+	m := f.file.Multipart
+	return m.GetPartNumbers(), m.GetChunkSize()
+}
+
+func (f *fileTransfer) getReader() (io.Reader, error) {
+	switch v := f.tx.(type) {
+	case *BufferedFile:
+		return bufio.NewReader(v.GetFile()), nil
+	case *Buffer:
+		return bytes.NewReader(v.GetBytes()), nil
+	default:
+		return nil, fmt.Errorf("unsupported transferable source")
+	}
+}
+
+func (f *fileTransfer) getLocalFile() *os.File {
+	switch v := f.tx.(type) {
+	case *BufferedFile:
+		return v.GetFile()
+	default:
+		return nil
+	}
+}
+
+func (f *fileTransfer) getBytes() []byte {
+	switch v := f.tx.(type) {
+	case *Buffer:
+		return v.GetBytes()
+	default:
+		return nil
+	}
+}
+
+func newFileTransfer(tx Transferable, file *File) *fileTransfer {
+	return &fileTransfer{
+		tx:   tx,
+		file: file,
+	}
+}
+
+// fileTransferMap indexes fileTransfer by name or filepath
+type fileTransferMap map[string]fileTransfer
 
 // toFileObject converts a Transferable into a serializable file object
 func toFileObject(t Transferable) fileObject {
