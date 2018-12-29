@@ -34,17 +34,6 @@ func (t Transfer) String() string {
 	return ToString(t)
 }
 
-// UploadURL represents the response once a request for the URL destination of
-// the local file
-type UploadURL struct {
-	Success *bool   `json:"success"`
-	URL     *string `json:"url"`
-}
-
-func (u UploadURL) String() string {
-	return ToString(u)
-}
-
 // TransfersService handles communication with the classic related methods of the
 // WeTransfer API
 type TransfersService service

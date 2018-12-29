@@ -1,14 +1,33 @@
 package wt
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 )
 
 // identifiable describes an object that can return an id
 type identifiable interface {
 	GetID() string
+}
+
+// UploadURL represents a response of an upload URL retrieval request
+type UploadURL struct {
+	Success *bool   `json:"success"`
+	URL     *string `json:"url"`
+}
+
+func (u *UploadURL) GetURL() string {
+	if u == nil || u.URL == nil {
+		return ""
+	}
+	return *u.URL
+}
+
+func (u UploadURL) String() string {
+	return ToString(u)
 }
 
 // uploaderService is a common file upload service for transfers
@@ -61,6 +80,23 @@ func (u *uploaderService) uploadFile(ctx context.Context, idx identifiable, ft *
 }
 
 func (t *uploaderService) uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
+	url := uurl.GetURL()
+
+	if url == "" {
+		return fmt.Errorf("blank URL entry")
+	}
+
+	reader := bytes.NewReader(b)
+
+	req, err := http.NewRequest("PUT", url, reader)
+	if err != nil {
+		return err
+	}
+
+	if _, err = http.DefaultClient.Do(req); err != nil {
+		return err
+	}
+
 	return nil
 }
 
