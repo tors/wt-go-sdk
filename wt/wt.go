@@ -18,8 +18,6 @@ const (
 	contentType    = "application/json"
 )
 
-type M map[string]interface{}
-
 type Client struct {
 	client *http.Client // HTTP client used to communicate with the API.
 
