@@ -38,11 +38,10 @@ func main() {
 
     client, _ := wt.NewAuthorizedClient(ctx, apiKey, nil)
 
-    message := "My first transfer!"
-    object, _ := wt.FromString("abc", "abc.txt")
-    fo := []*wt.FileObject{object}
+    message := "My first pony!"
+    buffer := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
-    resp, _ := client.Transfers.Create(ctx, &message, fo)
-    fmt.Printf("%+v\n", resp)
+    transfer, _ := client.Transfers.Create(ctx, &message, buffer)
+    fmt.Println(transfer.String())
 }
 ```

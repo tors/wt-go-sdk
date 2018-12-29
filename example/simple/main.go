@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/tors/wt-go-sdk/wt"
 )
 
 func main() {
@@ -10,20 +13,18 @@ func main() {
 	fmt.Print("Enter API key: ")
 	fmt.Scanf("%s", &apiKey)
 
-	// ctx := context.Background()
+	ctx := context.Background()
 
-	// client, err := wt.NewAuthorizedClient(ctx, apiKey, nil)
-	// checkErr(err)
+	client, err := wt.NewAuthorizedClient(ctx, apiKey, nil)
+	checkErr(err)
 
-	// message := "My first transfer!"
+	message := "My first pony!"
+	buffer := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
-	// object, _ := wt.FromString("abc", "abc.txt")
-	// fo := []*wt.FileObject{object}
+	transfer, err := client.Transfers.Create(ctx, &message, buffer)
+	checkErr(err)
 
-	// resp, err := client.Transfers.Create(ctx, &message, fo)
-	// checkErr(err)
-
-	// fmt.Printf("%v\n", resp)
+	fmt.Println(transfer.String())
 }
 
 func checkErr(err error) {
