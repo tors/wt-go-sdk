@@ -3,8 +3,13 @@ package wt
 import (
 	"context"
 	"fmt"
-	"os"
 )
+
+// Transferable describes a file object in WeTransfer
+type Transferable interface {
+	GetName() string
+	GetSize() int64
+}
 
 // Transfer represents the response when a successful transfer
 // request is issued.
@@ -29,27 +34,6 @@ func (t Transfer) String() string {
 	return ToString(t)
 }
 
-// TransferRequest represents the parameters to create a transfer
-type TransferRequest struct {
-	Message *string       `json:"message"`
-	Files   []*FileObject `json:"files"`
-}
-
-// AppendAsFileObject creates a new file object and appends it into
-// the file objects array
-func (t *TransferRequest) AppendAsFileObject(name string, size int64) {
-	f := NewFileObject(name, size)
-	if f != nil {
-		t.Files = append(t.Files, f)
-	}
-}
-
-func NewTransferRequest(message *string) *TransferRequest {
-	return &TransferRequest{
-		Message: message,
-	}
-}
-
 // UploadURL represents the response once a request for the URL destination of
 // the local file
 type UploadURL struct {
@@ -65,39 +49,78 @@ func (u UploadURL) String() string {
 // WeTransfer API
 type TransfersService service
 
-// Create informs the API that we want to create a transfer (with at
-// least one file).
-func (t *TransfersService) Create(ctx context.Context, in interface{}, message *string) (*Transfer, error) {
-	var tid string
+// Create uploads a file, set of file, and buffered data. Uploadable data
+// includes these types:
+//
+//	string - *BufferedFile is created from this string
+//	[]string - []*BufferedFile is created from the string slice
+//	*Buffer
+//	[]*Buffer
+//	*BufferedFile
+//	[]*BufferedFile
+func (t *TransfersService) Create(ctx context.Context, message *string, in interface{}) (*Transfer, error) {
+	if in == nil {
+		return nil, fmt.Errorf("empty files")
+	}
+
+	tx := make([]Transferable, 0)
+
 	switch v := in.(type) {
 	case string:
-		ts, err := t.createTransfer(ctx, v, message)
+		buf, err := NewBufferedFile(v)
 		if err != nil {
 			return nil, err
 		}
-		tid = ts.GetID()
-		file := ts.Files[0]
-		local, _ := os.Open(v)
-		defer local.Close()
-		err = t.client.uploader.uploadFile(ctx, ts, local, file)
+		tx = append(tx, buf)
+	case []string:
+		var err error
+		var buf *BufferedFile
+		for _, p := range v {
+			buf, err = NewBufferedFile(p)
+			if err != nil {
+				break
+			}
+			tx = append(tx, buf)
+		}
 		if err != nil {
 			return nil, err
 		}
+	case *Buffer:
+		tx = append(tx, v)
+	case []*Buffer:
+		for _, b := range v {
+			tx = append(tx, b)
+		}
+	case *BufferedFile:
+		tx = append(tx, v)
+	case []*BufferedFile:
+		for _, b := range v {
+			tx = append(tx, b)
+		}
+	default:
+		return nil, fmt.Errorf(`allowed types are string []string *Buffer []*Buffer *BufferedFile []*BufferedFile`)
 	}
 
-	return t.Find(ctx, tid)
+	return t.createTransfer(ctx, message, tx...)
 }
 
-func (t *TransfersService) createTransfer(ctx context.Context, path string, message *string) (*Transfer, error) {
-	name, size, err := fileInfo(path)
-	if err != nil {
-		return nil, err
+// createTransfer returns a transfer object after submitting a new transfer
+// request to the API
+func (t *TransfersService) createTransfer(ctx context.Context, message *string, tx ...Transferable) (*Transfer, error) {
+	var fs []fileObject
+
+	for _, obj := range tx {
+		fs = append(fs, toFileObject(obj))
 	}
 
-	trq := NewTransferRequest(message)
-	trq.AppendAsFileObject(name, size)
+	req, err := t.client.NewRequest("POST", "transfers", &struct {
+		Message *string      `json:"message"`
+		Files   []fileObject `json:"files"`
+	}{
+		Message: message,
+		Files:   fs,
+	})
 
-	req, err := t.client.NewRequest("POST", "transfers", trq)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +133,7 @@ func (t *TransfersService) createTransfer(ctx context.Context, path string, mess
 	return &ts, nil
 }
 
-// Find retrieves transfer information given an ID.
+// Find retrieves the transfer object given an ID.
 func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, error) {
 	path := fmt.Sprintf("transfers/%v", id)
 

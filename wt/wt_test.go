@@ -57,16 +57,16 @@ func testErrorResponse(t *testing.T, err error, message string) {
 	}
 }
 
-// openTestFile creates a new file with the given name and content for testing.
-func openTestFile(name, content string) (file *os.File, dir string, err error) {
-	dir, err = ioutil.TempDir("", "wt-go-sdk")
+// setupTestFile creates a new file with the given name and content for testing.
+func setupTestFile(t *testing.T, name, content string) *os.File {
+	dir, err := ioutil.TempDir("", "wt-go-sdk")
 	if err != nil {
-		return nil, dir, err
+		t.Errorf("openTestFile returned an error: %v", err)
 	}
 
-	file, err = os.OpenFile(path.Join(dir, name), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	file, err := os.OpenFile(path.Join(dir, name), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
-		return nil, dir, err
+		t.Errorf("openTestFile returned an error: %v", err)
 	}
 
 	fmt.Fprint(file, content)
@@ -75,10 +75,10 @@ func openTestFile(name, content string) (file *os.File, dir string, err error) {
 	file.Close()
 	file, err = os.Open(file.Name())
 	if err != nil {
-		return nil, dir, err
+		t.Errorf("openTestFile returned an error: %v", err)
 	}
 
-	return file, dir, err
+	return file
 }
 
 func TestNewClient(t *testing.T) {

@@ -12,17 +12,19 @@ func TestTransfersService_createTransfer(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
-	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
+	filename := "pony.txt"
+	message := "My first pony"
 
+	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
 		testHeader(t, r, "x-api-key", testApiKey)
 		testHeader(t, r, "Authorization", fmt.Sprintf("Bearer %v", testJWTAuthToken))
 
-		fmt.Fprint(w, `
+		fmt.Fprintf(w, `
 			{
 			  "success" : true,
 			  "id" : "random-hash",
-			  "message" : "Please deliver",
+			  "message" : "%v",
 			  "state" : "uploading",
 			  "url" : null,
 			  "expires_at": "2019-01-01T00:00:00Z",
@@ -34,27 +36,32 @@ func TestTransfersService_createTransfer(t *testing.T) {
 				  },
 				  "size" : 195906,
 				  "type" : "file",
-				  "name" : "kitty.txt",
+				  "name" : "%v",
 				  "id" : "random-hash-1"
 				}
 			  ]
 			}
-		`)
+		`, message, filename)
 	})
 
-	file, _, err := openTestFile("kitty.txt", "meow")
+	tfile := setupTestFile(t, filename, message)
+	defer tfile.Close()
+
+	file, err := NewBufferedFile(tfile.Name())
+	if err != nil {
+		t.Errorf("NewBufferedFile returned an error: %v", err)
+	}
 	defer file.Close()
 
-	transfer, err := client.Transfers.createTransfer(context.Background(), file.Name(), nil)
-
+	transfer, err := client.Transfers.createTransfer(context.Background(), &message, file)
 	if err != nil {
-		t.Errorf("TransfersService.Create returned an error: %v", err)
+		t.Errorf("TransfersService.createTransfer returned an error: %v", err)
 	}
 
 	want := &Transfer{
 		Success:   Bool(true),
 		ID:        String("random-hash"),
-		Message:   String("Please deliver"),
+		Message:   &message,
 		State:     String("uploading"),
 		URL:       nil,
 		ExpiresAt: String("2019-01-01T00:00:00Z"),
@@ -66,7 +73,7 @@ func TestTransfersService_createTransfer(t *testing.T) {
 				},
 				Size: Int64(195906),
 				Type: String("file"),
-				Name: String("kitty.txt"),
+				Name: &filename,
 				ID:   String("random-hash-1"),
 			},
 		},
@@ -92,10 +99,8 @@ func TestTransfersService_createTransfer_badRequest(t *testing.T) {
 		`, wantError)
 	})
 
-	file, _, err := openTestFile("kitty.txt", "meow")
-	defer file.Close()
-
-	_, err = client.Transfers.createTransfer(context.Background(), file.Name(), nil)
+	buf := NewBuffer("kitty.txt", []byte("meow"))
+	_, err := client.Transfers.createTransfer(context.Background(), nil, buf)
 
 	if err == nil {
 		t.Errorf("Expected error to be returned")

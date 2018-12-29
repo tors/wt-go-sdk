@@ -63,6 +63,87 @@ func (m Multipart) String() string {
 	return ToString(m)
 }
 
+// BufferedFile implements the Transferable interface. It represents
+// a file on disk to be sent as a file transfer.
+type BufferedFile struct {
+	name string
+	size int64
+	file *os.File
+}
+
+func (f *BufferedFile) GetName() string {
+	return f.name
+}
+
+func (f *BufferedFile) GetSize() int64 {
+	return f.size
+}
+
+func (f *BufferedFile) GetFile() *os.File {
+	return f.file
+}
+
+func (f *BufferedFile) Close() error {
+	return f.file.Close()
+}
+
+func NewBufferedFile(f string) (*BufferedFile, error) {
+	name, size, err := fileInfo(f)
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.Open(f)
+	if err != nil {
+		return nil, err
+	}
+	return &BufferedFile{
+		name: name,
+		size: size,
+		file: file,
+	}, nil
+}
+
+// Buffer implements the Transferable interface. It represents a buffered data
+// (usually created on the fly) to be sent as a file object
+type Buffer struct {
+	name string
+	size int64
+	b    []byte
+}
+
+func (f *Buffer) GetName() string {
+	return f.name
+}
+
+func (f *Buffer) GetSize() int64 {
+	return f.size
+}
+
+func (f *Buffer) GetBytes() []byte {
+	return f.b
+}
+
+func NewBuffer(name string, b []byte) *Buffer {
+	size := len(b)
+	return &Buffer{
+		name: name,
+		size: int64(size),
+		b:    b,
+	}
+}
+
+type fileObject struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+}
+
+func toFileObject(t Transferable) fileObject {
+	return fileObject{
+		Name: t.GetName(),
+		Size: t.GetSize(),
+	}
+}
+
 type FileError struct {
 	file *File
 	err  error
@@ -76,33 +157,6 @@ func NewFileError(file *File, err error) *FileError {
 	return &FileError{
 		file: file,
 		err:  err,
-	}
-}
-
-// FileObject represents a file object in WeTransfer
-type FileObject struct {
-	Name *string `json:"name"`
-	Size *int64  `json:"size"`
-}
-
-func (f *FileObject) GetName() string {
-	if f == nil || f.Name == nil {
-		return ""
-	}
-	return *f.Name
-}
-
-func (f *FileObject) GetSize() int64 {
-	if f == nil || f.Size == nil {
-		return int64(0)
-	}
-	return *f.Size
-}
-
-func NewFileObject(name string, size int64) *FileObject {
-	return &FileObject{
-		Name: &name,
-		Size: &size,
 	}
 }
 

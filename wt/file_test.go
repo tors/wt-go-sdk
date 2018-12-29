@@ -2,17 +2,24 @@ package wt
 
 import "testing"
 
-func TestNewFileObject(t *testing.T) {
-	name := "filename.txt"
-	size := int64(2)
+func TestNewBufferedFile(t *testing.T) {
+	name := "kitty.txt"
+	content := "meow"
+	size := len(content)
 
-	fo := NewFileObject(name, size)
+	file := setupTestFile(t, name, content)
+	defer file.Close()
+
+	fo, err := NewBufferedFile(file.Name())
+	if err != nil {
+		t.Errorf("NewBufferedFile returned an error: %v", err)
+	}
 
 	if fo.GetName() != name {
 		t.Errorf("Name returned %v, want %v", fo.GetName(), name)
 	}
 
-	if fo.GetSize() != size {
+	if fo.GetSize() != int64(size) {
 		t.Errorf("Size returned %v, want %v", fo.GetSize(), size)
 	}
 }
