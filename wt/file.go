@@ -132,11 +132,14 @@ func NewBuffer(name string, b []byte) *Buffer {
 	}
 }
 
+// fileObject represents the parameter serialized in JSON format to be sent to
+// create a file transfer
 type fileObject struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
 }
 
+// toFileObject converts a Transferable into a serializable file object
 func toFileObject(t Transferable) fileObject {
 	return fileObject{
 		Name: t.GetName(),
