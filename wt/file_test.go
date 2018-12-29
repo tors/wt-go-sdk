@@ -1,6 +1,9 @@
 package wt
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestNewBufferedFile(t *testing.T) {
 	name := "kitty.txt"
@@ -22,4 +25,29 @@ func TestNewBufferedFile(t *testing.T) {
 	if fo.GetSize() != int64(size) {
 		t.Errorf("Size returned %v, want %v", fo.GetSize(), size)
 	}
+}
+
+func ExampleNewBufferedFile() {
+	buf, err := NewBufferedFile("../example/files/Japan-02.jpg")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	fmt.Println(buf.GetName())
+	fmt.Println(buf.GetSize())
+
+	// Output:
+	// Japan-02.jpg
+	// 275639
+}
+
+func ExampleNewBuffer() {
+	buf := NewBuffer("pony.txt", []byte("yehaaa"))
+
+	fmt.Println(buf.GetName())
+	fmt.Println(buf.GetSize())
+
+	// Output:
+	// pony.txt
+	// 6
 }
