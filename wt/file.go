@@ -1,7 +1,6 @@
 package wt
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -144,22 +143,6 @@ func toFileObject(t Transferable) fileObject {
 	return fileObject{
 		Name: t.GetName(),
 		Size: t.GetSize(),
-	}
-}
-
-type FileError struct {
-	file *File
-	err  error
-}
-
-func (f *FileError) Error() string {
-	return fmt.Sprintf(`%v, %v`, f.file.GetID(), f.err.Error())
-}
-
-func NewFileError(file *File, err error) *FileError {
-	return &FileError{
-		file: file,
-		err:  err,
 	}
 }
 
