@@ -35,10 +35,10 @@ func (u UploadURL) String() string {
 // and boards
 type uploaderService service
 
-// send attempts to upload a file or a buffer. It does so by using the response
+// upload attempts to upload a file or a buffer. It does so by using the response
 // from the transfer request which has the multipart info. This info is used to
 // upload the file or buffer in chunks if needed.
-func (u *uploaderService) send(ctx context.Context, idx identifiable, ft *fileTransfer) error {
+func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *fileTransfer) error {
 	fid := ft.getID()
 	name := ft.getName()
 	partNum, chunkSize := ft.getMulipartValues()

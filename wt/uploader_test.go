@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestUploaderService_send(t *testing.T) {
+func TestUploaderService_upload(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -60,9 +60,9 @@ func TestUploaderService_send(t *testing.T) {
 		}
 		buf := NewBuffer("pony.txt", data)
 		ft := newFileTransfer(buf, file)
-		err := client.uploader.send(context.Background(), test.idx, ft)
+		err := client.uploader.upload(context.Background(), test.idx, ft)
 		if err != nil {
-			t.Errorf("send returned an error: %+v", err)
+			t.Errorf("upload returned an error: %+v", err)
 		}
 	}
 }
