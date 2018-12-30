@@ -8,6 +8,64 @@ import (
 	"testing"
 )
 
+func TestTransfersService_Complete(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/transfers/1/files/1/upload-complete", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"id": "1", "retries": 0, "name": "pony1.txt", "size": 2, "chunk_size": 2}`)
+	})
+	mux.HandleFunc("/transfers/1/files/2/upload-complete", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"id": "2", "retries": 1, "name": "pony2.txt", "size": 4, "chunk_size": 4}`)
+	})
+
+	tx := &Transfer{
+		ID: String("1"),
+		Files: []*File{
+			&File{
+				Multipart: &Multipart{
+					PartNumbers: Int64(1),
+					ChunkSize:   Int64(2),
+				},
+				ID: String("1"),
+			},
+			&File{
+				Multipart: &Multipart{
+					PartNumbers: Int64(1),
+					ChunkSize:   Int64(2),
+				},
+				ID: String("2"),
+			},
+		},
+	}
+
+	want := []*CompletedTransfer{
+		&CompletedTransfer{
+			ID:        String("1"),
+			Retries:   Int64(0),
+			Name:      String("pony1.txt"),
+			Size:      Int64(2),
+			ChunkSize: Int64(2),
+		},
+		&CompletedTransfer{
+			ID:        String("2"),
+			Retries:   Int64(1),
+			Name:      String("pony2.txt"),
+			Size:      Int64(4),
+			ChunkSize: Int64(4),
+		},
+	}
+
+	completed, err := client.Transfers.Complete(context.Background(), tx)
+	if err != nil {
+		t.Errorf("TransfersService.Complete returned an error: %v", err)
+	}
+
+	if !reflect.DeepEqual(completed, want) {
+		t.Errorf("TransfersService.Complete returned %v, want %v", completed, want)
+	}
+}
+
 func TestTransfersService_createTransfer(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()

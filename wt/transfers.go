@@ -34,6 +34,17 @@ func (t Transfer) String() string {
 	return ToString(t)
 }
 
+// CompletedTransfer represents a completed file transfer in
+// WeTransfer. This step is required after successfully sending the
+// files to S3.
+type CompletedTransfer struct {
+	ID        *string `json:"id"`
+	Retries   *int64  `json:"retries"`
+	Name      *string `json:"name"`
+	Size      *int64  `json:"size"`
+	ChunkSize *int64  `json:"chunk_size"`
+}
+
 // TransfersService handles communication with the classic related methods of the
 // WeTransfer API
 type TransfersService service
@@ -120,6 +131,38 @@ func (t *TransfersService) createTransfer(ctx context.Context, message *string, 
 	}
 
 	return &ts, nil
+}
+
+func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*CompletedTransfer, error) {
+	tid := tx.GetID()
+	errors := NewErrors(fmt.Sprintf("complete transfer %v errors", tid))
+	completed := make([]*CompletedTransfer, 0)
+
+	for _, file := range tx.Files {
+		fid := file.GetID()
+		path := fmt.Sprintf("transfers/%v/files/%v/upload-complete", tx.GetID(), fid)
+		partNum := file.Multipart.GetPartNumbers()
+		req, err := t.client.NewRequest("PUT", path, &struct {
+			PartNumbers int64 `json:"file_numbers"`
+		}{
+			PartNumbers: partNum,
+		})
+		if err != nil {
+			errors.Append(fmt.Errorf(`file %v completion request error: %v`, fid, err.Error()))
+			continue
+		}
+		var ct CompletedTransfer
+		if _, err = t.client.Do(ctx, req, &ct); err != nil {
+			errors.Append(fmt.Errorf(`file %v completion error: %v`, fid, err.Error()))
+		}
+		completed = append(completed, &ct)
+	}
+
+	if errors.Len() > 0 {
+		return nil, errors
+	}
+
+	return completed, nil
 }
 
 // Find retrieves the transfer object given an ID.
