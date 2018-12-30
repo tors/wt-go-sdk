@@ -26,10 +26,10 @@ This is the bare minimum code needed to create a transfer...
 package main
 
 import (
-  "context"
-  "fmt"
+    "context"
+    "fmt"
 
-  "github.com/tors/wt-go-sdk/wt"
+    "github.com/tors/wt-go-sdk/wt"
 )
 
 func main() {
