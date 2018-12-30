@@ -45,3 +45,5 @@ func main() {
     fmt.Println(transfer.String())
 }
 ```
+
+Please check out the [GoDoc](https://godoc.org/github.com/tors/wt-go-sdk/wt) for more usage and examples.
