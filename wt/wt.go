@@ -220,10 +220,6 @@ func (r *ErrorResponse) Error() string {
 		r.Response.StatusCode, r.Message)
 }
 
-func (r ErrorResponse) String() string {
-	return ToString(r)
-}
-
 // Bool is a helper routine that allocates a new bool value
 // to store v and returns a pointer to it.
 func Bool(v bool) *bool { return &v }
@@ -260,6 +256,10 @@ func (e *Errors) Error() string {
 
 func (e *Errors) Len() int {
 	return len(e.errors)
+}
+
+func (e *Errors) GetErrors() []error {
+	return e.errors
 }
 
 func NewErrors(m string) *Errors {

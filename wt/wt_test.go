@@ -57,8 +57,14 @@ func testHeader(t *testing.T, r *http.Request, header string, want string) {
 // testErrorResponse checks the message of an ErrorResponse. If it matches that
 // given message string, then it passes.
 func testErrorResponse(t *testing.T, err error, message string) {
-	if err, ok := err.(*ErrorResponse); !ok && err.Message != message {
-		t.Errorf("ErrorResponse.Message returned %v, want %+v", err.Message, message)
+	v, ok := err.(*ErrorResponse)
+
+	if ok && v.Message != message {
+		t.Errorf("ErrorResponse.Message returned %v, want %+v", v.Message, message)
+	}
+
+	if !ok {
+		t.Errorf("error is not an ErrorResponse kind: %v", err)
 	}
 }
 

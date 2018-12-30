@@ -45,6 +45,10 @@ type CompletedTransfer struct {
 	ChunkSize *int64  `json:"chunk_size"`
 }
 
+func (c CompletedTransfer) String() string {
+	return ToString(c)
+}
+
 // TransfersService handles communication with the classic related methods of the
 // WeTransfer API
 type TransfersService service
