@@ -114,6 +114,10 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 		return fmt.Errorf("blank URL entry")
 	}
 
+	if len(b) == 0 {
+		return fmt.Errorf("blank data")
+	}
+
 	reader := bytes.NewReader(b)
 
 	req, err := http.NewRequest("PUT", url, reader)
@@ -125,15 +129,15 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 	if err != nil {
 		return err
 	}
-	defer r.Body.Close()
-
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
 
 	if c := r.StatusCode; 200 <= c && c <= 299 {
 		return nil
+	}
+
+	defer r.Body.Close()
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
 	}
 
 	return fmt.Errorf("upload bytes error in %v %v: %d %v",
