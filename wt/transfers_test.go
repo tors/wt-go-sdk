@@ -66,6 +66,39 @@ func TestTransfersService_Complete(t *testing.T) {
 	}
 }
 
+func TestTransfersService_Complete_expectationFailed(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	wantError := "Chunks 1 are still missing."
+	mux.HandleFunc("/transfers/1/files/1/upload-complete", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(417)
+		fmt.Fprintf(w, `{"success": false, "message": "%v"}`, wantError)
+	})
+
+	tx := &Transfer{
+		ID: String("1"),
+		Files: []*File{
+			&File{
+				Multipart: &Multipart{
+					PartNumbers: Int64(1),
+					ChunkSize:   Int64(2),
+				},
+				ID: String("1"),
+			},
+		},
+	}
+
+	completed, err := client.Transfers.Complete(context.Background(), tx)
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+
+	if len(completed) != 0 {
+		t.Errorf("Expected length to be 0")
+	}
+}
+
 func TestTransfersService_createTransfer(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
