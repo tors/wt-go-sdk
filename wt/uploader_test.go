@@ -37,6 +37,54 @@ func TestUploaderService_getUploadURL(t *testing.T) {
 	}
 }
 
+func TestUploadBytes(t *testing.T) {
+	s3, srvURL, teardown := setupMux()
+	defer teardown()
+
+	s3.HandleFunc("/p/1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	})
+
+	uurl := &UploadURL{
+		Success: Bool(true),
+		URL:     String(srvURL + "/p/1"),
+	}
+
+	err := uploadBytes(context.Background(), uurl, []byte("pony data"))
+	if err != nil {
+		t.Errorf("uploadBytes returned an error: %v", err)
+	}
+}
+
+func TestUploadBytes_noSuchKey(t *testing.T) {
+	s3, srvURL, teardown := setupMux()
+	defer teardown()
+
+	s3.HandleFunc("/not/found/file/1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		fmt.Fprint(w, `
+			<?xml version="1.0" encoding="UTF-8"?>
+			<Error>
+			  <Code>NoSuchKey</Code>
+			  <Message>The resource you requested does not exist</Message>
+			  <Resource>/mybucket/myfoto.jpg</Resource> 
+			  <RequestId>4442587FB7D0A2F9</RequestId>
+			</Error>
+		`)
+	})
+
+	uurl := &UploadURL{
+		Success: Bool(true),
+		URL:     String(srvURL + "/not/found/file/1"),
+	}
+
+	err := uploadBytes(context.Background(), uurl, []byte("pony data"))
+
+	if err == nil {
+		t.Errorf("Expected error to be returned")
+	}
+}
+
 func TestUploaderService_getUploadURL_fail(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()

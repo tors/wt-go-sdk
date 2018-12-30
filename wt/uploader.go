@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -59,12 +60,12 @@ func (u *uploaderService) uploadFile(ctx context.Context, idx identifiable, ft *
 		buf = buf[:n]
 		uurl, nerr := u.getUploadURL(ctx, idx, fid, i)
 		if nerr != nil {
-			errors.Append(fmt.Errorf(`request upload URL part %v error, %v`, i, nerr.Error()))
+			errors.Append(fmt.Errorf(`request upload URL part %v error: %v`, i, nerr.Error()))
 			continue
 		}
-		nerr = u.uploadBytes(ctx, uurl, buf)
+		nerr = uploadBytes(ctx, uurl, buf)
 		if nerr != nil {
-			errors.Append(fmt.Errorf(`upload part %v error, %v`, i, nerr.Error()))
+			errors.Append(fmt.Errorf(`upload part %v error: %v`, i, nerr.Error()))
 		}
 	}
 
@@ -74,27 +75,6 @@ func (u *uploaderService) uploadFile(ctx context.Context, idx identifiable, ft *
 
 	if errors.Len() > 0 {
 		return errors
-	}
-
-	return nil
-}
-
-func (t *uploaderService) uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
-	url := uurl.GetURL()
-
-	if url == "" {
-		return fmt.Errorf("blank URL entry")
-	}
-
-	reader := bytes.NewReader(b)
-
-	req, err := http.NewRequest("PUT", url, reader)
-	if err != nil {
-		return err
-	}
-
-	if _, err = http.DefaultClient.Do(req); err != nil {
-		return err
 	}
 
 	return nil
@@ -125,4 +105,39 @@ func (t *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fi
 	}
 
 	return &uurl, nil
+}
+
+func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
+	url := uurl.GetURL()
+
+	if url == "" {
+		return fmt.Errorf("blank URL entry")
+	}
+
+	reader := bytes.NewReader(b)
+
+	req, err := http.NewRequest("PUT", url, reader)
+	if err != nil {
+		return err
+	}
+
+	r, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if c := r.StatusCode; 200 <= c && c <= 299 {
+		return nil
+	}
+
+	return fmt.Errorf("upload bytes error in %v %v: %d %v",
+		r.Request.Method, r.Request.URL,
+		r.StatusCode, string(data),
+	)
 }
