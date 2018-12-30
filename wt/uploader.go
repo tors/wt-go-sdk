@@ -130,6 +130,14 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
+		// If we got an error, and the context has been canceled,
+		// the context's error is probably more useful.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		return err
 	}
 
