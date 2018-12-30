@@ -34,7 +34,7 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	return client, mux, server.URL, server.Close
 }
 
-func setupMux() (mux *http.ServeMux, serverURL string, teardown func()) {
+func setupS3() (mux *http.ServeMux, serverURL string, teardown func()) {
 	mux = http.NewServeMux()
 	server := httptest.NewServer(mux)
 	return mux, server.URL, server.Close

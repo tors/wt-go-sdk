@@ -251,9 +251,9 @@ func (e *Errors) Append(err error) {
 
 func (e *Errors) Error() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, `%v:\n`, e.message)
+	fmt.Fprintf(buf, "%v:\n", e.message)
 	for _, er := range e.errors {
-		fmt.Fprintf(buf, `%v\n`, er.Error())
+		fmt.Fprintf(buf, "%v", er.Error())
 	}
 	return buf.String()
 }

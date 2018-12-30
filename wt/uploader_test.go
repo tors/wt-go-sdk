@@ -8,6 +8,65 @@ import (
 	"testing"
 )
 
+func TestUploaderService_send(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	s3, s3url, s3teardown := setupS3()
+	defer s3teardown()
+
+	tests := []struct {
+		partNumbers int
+		chunkSize   int
+		fileID      string
+		idx         identifiable
+	}{
+		{2, 1024, "1", &Transfer{ID: String("1")}},
+		{2, 256, "2", &Board{ID: String("2")}},
+	}
+
+	for _, test := range tests {
+		var prefix string
+		switch test.idx.(type) {
+		case *Transfer:
+			prefix = "transfers"
+		case *Board:
+			prefix = "boards"
+		}
+		for i := 1; i <= test.partNumbers; i++ {
+			func(partNum int) {
+				path := fmt.Sprintf("/%v/%v/files/%v/upload-url/%v", prefix, test.idx.GetID(), test.fileID, partNum)
+				mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+					fmt.Fprintf(w, `{"success": true, "url": "%s"}`, fmt.Sprintf("%v/%v/p/%v", s3url, prefix, partNum))
+				})
+				s3.HandleFunc(fmt.Sprintf("/%v/p/%v", prefix, partNum), func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+				})
+			}(i)
+		}
+
+		file := &File{
+			ID:   &test.fileID,
+			Name: String("pony.txt"),
+			Multipart: &Multipart{
+				PartNumbers: Int64(int64(test.partNumbers)),
+				ChunkSize:   Int64(int64(test.chunkSize)),
+			},
+		}
+
+		data := make([]byte, test.partNumbers*test.chunkSize)
+		for i := range data {
+			data[i] = 'x'
+		}
+		buf := NewBuffer("pony.txt", data)
+		ft := newFileTransfer(buf, file)
+		err := client.uploader.send(context.Background(), test.idx, ft)
+		if err != nil {
+			t.Errorf("send returned an error: %+v", err)
+		}
+	}
+}
+
 func TestUploaderService_getUploadURL(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
@@ -38,16 +97,18 @@ func TestUploaderService_getUploadURL(t *testing.T) {
 }
 
 func TestUploadBytes(t *testing.T) {
-	s3, srvURL, teardown := setupMux()
+	s3, s3url, teardown := setupS3()
 	defer teardown()
 
-	s3.HandleFunc("/p/1", func(w http.ResponseWriter, r *http.Request) {
+	s3path := "/p/1"
+
+	s3.HandleFunc(s3path, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	})
 
 	uurl := &UploadURL{
 		Success: Bool(true),
-		URL:     String(srvURL + "/p/1"),
+		URL:     String(s3url + s3path),
 	}
 
 	err := uploadBytes(context.Background(), uurl, []byte("pony data"))
@@ -57,7 +118,7 @@ func TestUploadBytes(t *testing.T) {
 }
 
 func TestUploadBytes_noSuchKey(t *testing.T) {
-	s3, srvURL, teardown := setupMux()
+	s3, s3url, teardown := setupS3()
 	defer teardown()
 
 	s3.HandleFunc("/not/found/file/1", func(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +136,7 @@ func TestUploadBytes_noSuchKey(t *testing.T) {
 
 	uurl := &UploadURL{
 		Success: Bool(true),
-		URL:     String(srvURL + "/not/found/file/1"),
+		URL:     String(s3url + "/not/found/file/1"),
 	}
 
 	err := uploadBytes(context.Background(), uurl, []byte("pony data"))
