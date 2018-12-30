@@ -40,6 +40,8 @@ type Board struct {
 	Items []*Item `json:"items"`
 }
 
+// GetID returns the ID field if it is not nil. Otherwise, it returns
+// an empty string.
 func (b *Board) GetID() string {
 	if b == nil || b.ID == nil {
 		return ""
@@ -78,6 +80,7 @@ func (t *BoardsService) Create(ctx context.Context, name string, desc *string) (
 	return board, nil
 }
 
+// Find retrieves a board given an id.
 func (t *BoardsService) Find(ctx context.Context, id string) (*Board, error) {
 	path := fmt.Sprintf("boards/%v", id)
 

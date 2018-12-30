@@ -20,6 +20,8 @@ type UploadURL struct {
 	URL     *string `json:"url"`
 }
 
+// GetURL returns the URL field if it is not nil. Otherwise, it returns
+// an empty string.
 func (u *UploadURL) GetURL() string {
 	if u == nil || u.URL == nil {
 		return ""
@@ -83,7 +85,7 @@ func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *file
 	return nil
 }
 
-func (t *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fid string, partNum int64) (*UploadURL, error) {
+func (u *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fid string, partNum int64) (*UploadURL, error) {
 	var pathPrefix string
 
 	switch idx.(type) {

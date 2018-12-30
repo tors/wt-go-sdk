@@ -97,7 +97,7 @@ func TestBoardsService_Find(t *testing.T) {
 		State: String("processing"),
 		URL:   String("https://we.tl/b-the-boards-url"),
 		Items: []*Item{
-			&Item{
+			{
 				ID:   String("random-hash"),
 				Name: String("kittie.gif"),
 				Size: Int64(195906),
@@ -107,7 +107,7 @@ func TestBoardsService_Find(t *testing.T) {
 				},
 				Type: String("file"),
 			},
-			&Item{
+			{
 				ID:  String("different-random-hash"),
 				URL: String("https://wetransfer.com"),
 				Meta: &Meta{

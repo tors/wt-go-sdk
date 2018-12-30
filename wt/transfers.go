@@ -23,6 +23,8 @@ type Transfer struct {
 	Files     []*File `json:"files"`
 }
 
+// GetID returns the ID field if it is not nil. Otherwise, it returns
+// an empty string.
 func (t *Transfer) GetID() string {
 	if t == nil || t.ID == nil {
 		return ""
@@ -137,6 +139,11 @@ func (t *TransfersService) createTransfer(ctx context.Context, message *string, 
 	return &ts, nil
 }
 
+// Complete informs WeTransfer that all the uploading for our files is done.
+// When the files are uploaded to S3, WeTransfer has no way of determining if
+// the transfer is successful or not. After the call to the endpoint is made,
+// this method returns the list of completed transfer responses which length is
+// equal to the number of files specified in the transfer request.
 func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*CompletedTransfer, error) {
 	tid := tx.GetID()
 	errors := NewErrors(fmt.Sprintf("complete transfer %v errors", tid))

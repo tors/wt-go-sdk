@@ -18,6 +18,7 @@ const (
 	contentType    = "application/json"
 )
 
+// A Client manages communication with the WeTransfer API.
 type Client struct {
 	client *http.Client // HTTP client used to communicate with the API.
 
@@ -236,15 +237,18 @@ func Int64(v int64) *int64 { return &v }
 // to store v and returns a pointer to it.
 func String(v string) *string { return &v }
 
+// Errors collect errors and implements the error interface
 type Errors struct {
 	message string
 	errors  []error
 }
 
+// Append inserts an error to the errors filed
 func (e *Errors) Append(err error) {
 	e.errors = append(e.errors, err)
 }
 
+// Error collection of errors in string format
 func (e *Errors) Error() string {
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%v:\n", e.message)
@@ -254,14 +258,17 @@ func (e *Errors) Error() string {
 	return buf.String()
 }
 
+// Len returns the number of errors collected
 func (e *Errors) Len() int {
 	return len(e.errors)
 }
 
+// GetErrors returns the list of errors
 func (e *Errors) GetErrors() []error {
 	return e.errors
 }
 
+// NewErrors returns an instance with 0 errors
 func NewErrors(m string) *Errors {
 	return &Errors{
 		message: m,

@@ -17,6 +17,8 @@ type File struct {
 	ID        *string    `json:"id"`
 }
 
+// GetName returns the Name field if it is not nil. Otherwise, it returns
+// an empty string.
 func (f *File) GetName() string {
 	if f == nil || f.Name == nil {
 		return ""
@@ -24,6 +26,8 @@ func (f *File) GetName() string {
 	return *f.Name
 }
 
+// GetID returns the ID field if it is not nil. Otherwise, it returns
+// an empty string.
 func (f *File) GetID() string {
 	if f == nil || f.ID == nil {
 		return ""
@@ -31,8 +35,8 @@ func (f *File) GetID() string {
 	return *f.ID
 }
 
-func (r File) String() string {
-	return ToString(r)
+func (f File) String() string {
+	return ToString(f)
 }
 
 // Multipart is info on the chunks of data to be uploaded
@@ -41,6 +45,7 @@ type Multipart struct {
 	ChunkSize   *int64 `json:"chunk_size"`
 }
 
+// GetPartNumbers returns the PartNumbers field.
 func (m *Multipart) GetPartNumbers() int64 {
 	if m == nil || m.PartNumbers == nil {
 		return int64(0)
@@ -48,6 +53,7 @@ func (m *Multipart) GetPartNumbers() int64 {
 	return *m.PartNumbers
 }
 
+// GetChunkSize returns the ChunkSize field.
 func (m *Multipart) GetChunkSize() int64 {
 	if m == nil || m.ChunkSize == nil {
 		return int64(0)
@@ -67,22 +73,32 @@ type BufferedFile struct {
 	file *os.File
 }
 
+// GetName returns the name field.
 func (f *BufferedFile) GetName() string {
 	return f.name
 }
 
+// GetSize returns the size field.
 func (f *BufferedFile) GetSize() int64 {
 	return f.size
 }
 
+// GetFile returns the file field.
 func (f *BufferedFile) GetFile() *os.File {
 	return f.file
 }
 
+// Close closes the file unless it's nil
 func (f *BufferedFile) Close() error {
+	if f == nil || f.file == nil {
+		return nil
+	}
 	return f.file.Close()
 }
 
+// NewBufferedFile returns a new BufferedFile given a filepath f. A stat is
+// performed to test if it exists and retrieve relevant information like the
+// name and the size.
 func NewBufferedFile(f string) (*BufferedFile, error) {
 	name, size, err := fileInfo(f)
 	if err != nil {
@@ -107,18 +123,22 @@ type Buffer struct {
 	b    []byte
 }
 
+// GetName returns the name field.
 func (f *Buffer) GetName() string {
 	return f.name
 }
 
+// GetSize returns the size field.
 func (f *Buffer) GetSize() int64 {
 	return f.size
 }
 
+// GetBytes returns the b field which represents data
 func (f *Buffer) GetBytes() []byte {
 	return f.b
 }
 
+// NewBuffer returns a new Buffer given a string and a slice of bytes
 func NewBuffer(name string, b []byte) *Buffer {
 	size := len(b)
 	return &Buffer{

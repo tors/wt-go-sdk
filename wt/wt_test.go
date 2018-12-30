@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testApiKey       = "abc"
+	testAPIKey       = "abc"
 	testJWTAuthToken = "jwt-token"
 )
 

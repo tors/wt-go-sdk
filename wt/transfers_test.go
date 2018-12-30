@@ -22,14 +22,14 @@ func TestTransfersService_Complete(t *testing.T) {
 	tx := &Transfer{
 		ID: String("1"),
 		Files: []*File{
-			&File{
+			{
 				Multipart: &Multipart{
 					PartNumbers: Int64(1),
 					ChunkSize:   Int64(2),
 				},
 				ID: String("1"),
 			},
-			&File{
+			{
 				Multipart: &Multipart{
 					PartNumbers: Int64(1),
 					ChunkSize:   Int64(2),
@@ -40,14 +40,14 @@ func TestTransfersService_Complete(t *testing.T) {
 	}
 
 	want := []*CompletedTransfer{
-		&CompletedTransfer{
+		{
 			ID:        String("1"),
 			Retries:   Int64(0),
 			Name:      String("pony1.txt"),
 			Size:      Int64(2),
 			ChunkSize: Int64(2),
 		},
-		&CompletedTransfer{
+		{
 			ID:        String("2"),
 			Retries:   Int64(1),
 			Name:      String("pony2.txt"),
@@ -79,7 +79,7 @@ func TestTransfersService_Complete_expectationFailed(t *testing.T) {
 	tx := &Transfer{
 		ID: String("1"),
 		Files: []*File{
-			&File{
+			{
 				Multipart: &Multipart{
 					PartNumbers: Int64(1),
 					ChunkSize:   Int64(2),
@@ -108,7 +108,7 @@ func TestTransfersService_createTransfer(t *testing.T) {
 
 	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
-		testHeader(t, r, "x-api-key", testApiKey)
+		testHeader(t, r, "x-api-key", testAPIKey)
 		testHeader(t, r, "Authorization", fmt.Sprintf("Bearer %v", testJWTAuthToken))
 
 		fmt.Fprintf(w, `
@@ -157,7 +157,7 @@ func TestTransfersService_createTransfer(t *testing.T) {
 		URL:       nil,
 		ExpiresAt: String("2019-01-01T00:00:00Z"),
 		Files: []*File{
-			&File{
+			{
 				Multipart: &Multipart{
 					PartNumbers: Int64(1),
 					ChunkSize:   Int64(195906),
