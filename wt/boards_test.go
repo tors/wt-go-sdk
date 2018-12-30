@@ -15,7 +15,7 @@ func TestBoardsService_Create(t *testing.T) {
 	mux.HandleFunc("/boards", func(w http.ResponseWriter, r *http.Request) {
 
 		testMethod(t, r, "POST")
-		testHeader(t, r, "x-api-key", testApiKey)
+		testHeader(t, r, "x-api-key", testAPIKey)
 		testHeader(t, r, "Authorization", fmt.Sprintf("Bearer %v", testJWTAuthToken))
 
 		fmt.Fprint(w, `

@@ -99,13 +99,13 @@ func (u *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fi
 
 	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, idx.GetID(), fid, partNum)
 
-	req, err := t.client.NewRequest("POST", path, nil)
+	req, err := u.client.NewRequest("POST", path, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var uurl UploadURL
-	if _, err = t.client.Do(ctx, req, &uurl); err != nil {
+	if _, err = u.client.Do(ctx, req, &uurl); err != nil {
 		return nil, err
 	}
 

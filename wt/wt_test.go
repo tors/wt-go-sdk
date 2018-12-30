@@ -25,7 +25,7 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	server := httptest.NewServer(mux)
 
 	// client configured to use test server
-	client, _ = NewClient(testApiKey, nil)
+	client, _ = NewClient(testAPIKey, nil)
 	url, _ := url.Parse(server.URL + "/")
 
 	client.BaseURL = url
