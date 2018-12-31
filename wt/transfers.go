@@ -156,6 +156,7 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 	return completed, nil
 }
 
+// Finalize closes a transfer for modification rendering it immutable and downloadable.
 func (t *TransfersService) Finalize(ctx context.Context, id string) (*Transfer, error) {
 	path := fmt.Sprintf("transfers/%v/finalize", id)
 
