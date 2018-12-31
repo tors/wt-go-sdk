@@ -22,15 +22,14 @@ It's a good practice not to hardcode any private keys. In the event that you
 think your API key might be compromised, you can revoke it from within the
 [developer portal](https://developers.wetransfer.com/).
 
-For types & references, please check out the [godoc
-here](https://godoc.org/github.com/tors/wt-go-sdk/wt).
-
-For examples, please check the [example directory](https://github.com/tors/wt-go-sdk/tree/master/example) of this repo.
+### Helpful Links
+- [Documentation](https://godoc.org/github.com/tors/wt-go-sdk/wt)
+- [Examples](https://github.com/tors/wt-go-sdk/tree/master/example)
 
 ### Creating a client
 
-You'll need to create an authorized client which automatically requests for for
-a JWT token. This token is used in subsequent requests to the server.
+You'll need to create an authorized client which automatically requests for a
+JWT token. This token is used in subsequent requests to the server.
 
 ```
 apiKey := "<your-api-key>"
@@ -49,20 +48,23 @@ transfer is 2GB. Files are immutable once successfully uploaded.
 
 ### Create transfers
 
-You can use string, Buffer, and BufferedFile types as file objects to create
-a transfer.
+You can use string, `*os.File` `*Buffer`, and `*BufferedFile` types as file
+objects to create a transfer.
 
 ```go
 // Buffer
 buf := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
 // BufferedFile
-bufFile := wt.BufferedFile("/from/disk/pony.txt")
+bufFile := wt.BuildBufferedFile("/from/disk/pony.txt")
 
 // string creates a BufferedFile automatically when passed as parameter
 str := "/from/disk/kitten.txt"
 
-client.Transfers.Create(ctx, &message, buf, bufFile, str)
+// *os.File
+file, _ := os.Open("/from/disk/pony.txt")
+
+client.Transfers.Create(ctx, &message, buf, bufFile, str, file)
 ```
 
 `Transfers.Create` does the necessary steps to actually transfer the file.

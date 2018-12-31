@@ -60,8 +60,8 @@ type TransfersService service
 // does the whole ceremony - create a transfer request, get the S3 signed URLs,
 // actually upload the file to S3, and complete and finalize the upload.
 //
-// Create parameter data types can be string, *Buffer, *BufferedFile. Slices
-// can be passed but will have to be unpacked.
+// Create parameter data types can be string, *os.File, *Buffer, *BufferedFile.
+// Slices can be passed but will have to be unpacked.
 func (t *TransfersService) Create(ctx context.Context, message *string, in ...interface{}) (*Transfer, error) {
 	if in == nil {
 		return nil, fmt.Errorf("empty files")
