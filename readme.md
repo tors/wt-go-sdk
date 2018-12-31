@@ -3,7 +3,7 @@
 
 This is an unofficial WeTransfer Go SDK.
 
-**Status**: Work in progress. Do not use in production.
+**Status**: Work in progress. Do not use in production... yet.
 
 ## Installation
 
@@ -15,35 +15,76 @@ go get -v github.com/tors/wt-go-sdk
 
 ## Getting started
 
-In order to be able to use the SDK and access our public APIs, you must provide
-an API key, which is available in our [Developers
-Portal](https://developers.wetransfer.com/).
+To get started, you'll need an API key. You can get one from WeTransfer's
+[Developers Portal](https://developers.wetransfer.com/).
 
-This is the bare minimum code needed to create a transfer...
+It's a good practice not to hardcode any private keys. In the event that you
+think your API key might be compromised, you can revoke it from within the
+[developer portal](https://developers.wetransfer.com/).
 
-```go
-// main.go
-package main
+For types & references, please check out the [godoc
+here](https://godoc.org/github.com/tors/wt-go-sdk/wt).
 
-import (
-    "context"
-    "fmt"
+For examples, please check the [example directory](https://github.com/tors/wt-go-sdk/tree/master/example) of this repo.
 
-    "github.com/tors/wt-go-sdk/wt"
-)
+### Creating a client
 
-func main() {
-    apiKey := "<your-api-key>"
-    ctx := context.Background()
+You'll need to create an authorized client which automatically requests for for
+a JWT token. This token is used in subsequent requests to the server.
 
-    client, _ := wt.NewAuthorizedClient(ctx, apiKey, nil)
-
-    message := "My first pony!"
-    buffer := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
-
-    transfer, _ := client.Transfers.Create(ctx, &message, buffer)
-    fmt.Println(transfer.String())
-}
+```
+apiKey := "<your-api-key>"
+ctx := context.Background()
+client, err := wt.NewAuthorizedClient(ctx, apiKey, nil)
 ```
 
-Please check out the [GoDoc](https://godoc.org/github.com/tors/wt-go-sdk/wt) for more usage and examples.
+For subsequent authorized requests, you'll need to pass a
+[context](https://golang.org/pkg/context).
+
+## Transfers
+
+A transfer is a collection of files that can be created once, and downloaded
+until it expires. The expiry is set to 7 days and the maximum size of data per
+transfer is 2GB. Files are immutable once successfully uploaded.
+
+### Create transfers
+
+You can use string, Buffer, and BufferedFile types as file objects to create
+a transfer.
+
+```go
+// Buffer
+buf := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+
+// BufferedFile
+bufFile := wt.BufferedFile("/from/disk/pony.txt")
+
+// string creates a BufferedFile automatically when passed as parameter
+str := "/from/disk/kitten.txt"
+
+client.Transfers.Create(ctx, &message, buf, bufFile, str)
+```
+
+`Transfers.Create` does the necessary steps to actually transfer the file.
+Internally it does the whole ritual - _create new transfer_, _request for upload
+URLs_, _actual file upload to S3_, _complete the upload_, and _finalize_ it.
+
+#### Slices
+
+You can pass slices, but you'll need to unpack it. `Transfers.Create` only
+accepts strings and `Transferable` interface types.
+
+```go
+// slice of strings
+files := []string{ "/disk/pony.txt", "/disk/kitten.txt" }
+client.Transfers.Create(ctx, &message, files...)
+
+// slice of Buffers
+pony := wt.NewBuffer("pony.txt", []byte("yehaa")
+kitty := wt.NewBuffer("kitten.txt", []byte("meoww"))
+buffers := []*wt.Buffer{&pony, &kitty}
+client.Transfers.Create(ctx, &message, buffers...)
+```
+
+## Boards
+> WIP

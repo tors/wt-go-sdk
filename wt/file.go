@@ -96,18 +96,36 @@ func (f *BufferedFile) Close() error {
 	return f.file.Close()
 }
 
-// NewBufferedFile returns a new BufferedFile given a filepath f. A stat is
-// performed to test if it exists and retrieve relevant information like the
-// name and the size.
-func NewBufferedFile(f string) (*BufferedFile, error) {
-	name, size, err := fileInfo(f)
-	if err != nil {
-		return nil, err
+// BuildBufferedFile returns a new BufferedFile given f where if could
+// be a string or an os.File. Regardless of data type, a stat is
+// performed to get the name and the size.
+func BuildBufferedFile(f interface{}) (*BufferedFile, error) {
+	var path, name string
+	var file *os.File
+	var size int64
+	var err error
+
+	switch v := f.(type) {
+	case string:
+		path = (string)(v)
+		name, size, err = fileInfo(v)
+		if err != nil {
+			return nil, err
+		}
+		file, err = os.Open(v)
+		if err != nil {
+			return nil, err
+		}
+	case *os.File:
+		path = v.Name()
+		name, size, err = fileInfo(path)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported type")
 	}
-	file, err := os.Open(f)
-	if err != nil {
-		return nil, err
-	}
+
 	return &BufferedFile{
 		name: name,
 		size: size,

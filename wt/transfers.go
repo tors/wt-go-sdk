@@ -3,6 +3,7 @@ package wt
 import (
 	"context"
 	"fmt"
+	"os"
 )
 
 // Transferable describes a file object in WeTransfer
@@ -55,56 +56,34 @@ func (c CompletedTransfer) String() string {
 // WeTransfer API
 type TransfersService service
 
-// Create uploads a file, set of file, and buffered data. Uploadable data
-// includes these types:
+// Create attempts to upload data to WeTransfer using S3 as object storage. It
+// does the whole ceremony - create a transfer request, get the S3 signed URLs,
+// actually upload the file to S3, and complete and finalize the upload.
 //
-//	string - *BufferedFile is created from this string
-//	[]string - []*BufferedFile is created from the string slice
-//	*Buffer
-//	[]*Buffer
-//	*BufferedFile
-//	[]*BufferedFile
-func (t *TransfersService) Create(ctx context.Context, message *string, in interface{}) (*Transfer, error) {
+// Create parameter data types can be string, *Buffer, *BufferedFile. Slices
+// can be passed but will have to be unpacked.
+func (t *TransfersService) Create(ctx context.Context, message *string, in ...interface{}) (*Transfer, error) {
 	if in == nil {
 		return nil, fmt.Errorf("empty files")
 	}
 
-	tx := make([]Transferable, 0)
+	tx := make([]Transferable, len(in))
 
-	switch v := in.(type) {
-	case string:
-		buf, err := NewBufferedFile(v)
-		if err != nil {
-			return nil, err
-		}
-		tx = append(tx, buf)
-	case []string:
-		var err error
-		var buf *BufferedFile
-		for _, p := range v {
-			buf, err = NewBufferedFile(p)
+	for i, obj := range in {
+		switch v := obj.(type) {
+		case string, *os.File:
+			buf, err := BuildBufferedFile(v)
 			if err != nil {
-				break
+				return nil, err
 			}
-			tx = append(tx, buf)
+			tx[i] = buf
+		case *Buffer:
+			tx[i] = (*Buffer)(v)
+		case *BufferedFile:
+			tx[i] = (*BufferedFile)(v)
+		default:
+			return nil, fmt.Errorf(`allowed types are string string *Buffer *BufferedFile`)
 		}
-		if err != nil {
-			return nil, err
-		}
-	case *Buffer:
-		tx = append(tx, v)
-	case []*Buffer:
-		for _, b := range v {
-			tx = append(tx, b)
-		}
-	case *BufferedFile:
-		tx = append(tx, v)
-	case []*BufferedFile:
-		for _, b := range v {
-			tx = append(tx, b)
-		}
-	default:
-		return nil, fmt.Errorf(`allowed types are string []string *Buffer []*Buffer *BufferedFile []*BufferedFile`)
 	}
 
 	return t.createTransfer(ctx, message, tx...)

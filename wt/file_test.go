@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestNewBufferedFile(t *testing.T) {
+func TestBuildBufferedFile(t *testing.T) {
 	name := "kitty.txt"
 	content := "meow"
 	size := len(content)
@@ -13,22 +13,29 @@ func TestNewBufferedFile(t *testing.T) {
 	file := setupTestFile(t, name, content)
 	defer file.Close()
 
-	fo, err := NewBufferedFile(file.Name())
-	if err != nil {
-		t.Errorf("NewBufferedFile returned an error: %v", err)
+	tests := []interface{}{
+		file.Name(),
+		file,
 	}
 
-	if fo.GetName() != name {
-		t.Errorf("Name returned %v, want %v", fo.GetName(), name)
-	}
+	for _, f := range tests {
+		fo, err := BuildBufferedFile(f)
+		if err != nil {
+			t.Errorf("NewBufferedFile returned an error: %v", err)
+		}
 
-	if fo.GetSize() != int64(size) {
-		t.Errorf("Size returned %v, want %v", fo.GetSize(), size)
+		if fo.GetName() != name {
+			t.Errorf("Name returned %v, want %v", fo.GetName(), name)
+		}
+
+		if fo.GetSize() != int64(size) {
+			t.Errorf("Size returned %v, want %v", fo.GetSize(), size)
+		}
 	}
 }
 
-func ExampleNewBufferedFile() {
-	buf, err := NewBufferedFile("../example/files/Japan-02.jpg")
+func ExampleBuildBufferedFile() {
+	buf, err := BuildBufferedFile("../example/files/Japan-02.jpg")
 	if err != nil {
 		fmt.Println(err.Error())
 	}

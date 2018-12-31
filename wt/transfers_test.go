@@ -138,9 +138,9 @@ func TestTransfersService_createTransfer(t *testing.T) {
 	tfile := setupTestFile(t, filename, message)
 	defer tfile.Close()
 
-	file, err := NewBufferedFile(tfile.Name())
+	file, err := BuildBufferedFile(tfile)
 	if err != nil {
-		t.Errorf("NewBufferedFile returned an error: %v", err)
+		t.Errorf("BuildBufferedFile returned an error: %v", err)
 	}
 	defer file.Close()
 
@@ -171,7 +171,7 @@ func TestTransfersService_createTransfer(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(transfer, want) {
-		t.Errorf("TransfersService.Create returned %v, want %v", transfer, want)
+		t.Errorf("TransfersService.createTransfer returned %v, want %v", transfer, want)
 	}
 }
 
