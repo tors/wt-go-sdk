@@ -156,6 +156,22 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 	return completed, nil
 }
 
+func (t *TransfersService) Finalize(ctx context.Context, id string) (*Transfer, error) {
+	path := fmt.Sprintf("transfers/%v/finalize", id)
+
+	req, err := t.client.NewRequest("PUT", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	transfer := &Transfer{}
+	if _, err = t.client.Do(ctx, req, transfer); err != nil {
+		return nil, err
+	}
+
+	return transfer, nil
+}
+
 // Find retrieves the transfer object given an ID.
 func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, error) {
 	path := fmt.Sprintf("transfers/%v", id)

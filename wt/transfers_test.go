@@ -200,6 +200,67 @@ func TestTransfersService_createTransfer_badRequest(t *testing.T) {
 	testErrorResponse(t, err, wantError)
 }
 
+func TestTransfersService_Finalize(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/transfers/1/finalize", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "PUT")
+		fmt.Fprintf(w, `
+			{
+			  "success" : true,
+			  "id" : "1",
+			  "message" : null,
+			  "state" : "done",
+			  "url" : "https://we.tl/t-12344657",
+			  "expires_at": "2019-01-01T00:00:00Z",
+			  "files" : [
+				{
+				  "multipart" : {
+					"part_numbers" : 1,
+					"chunk_size" : 195906
+				  },
+				  "size" : 195906,
+				  "type" : "file",
+				  "name" : "pony.txt",
+				  "id" : "1"
+				}
+			  ]
+			}
+		`)
+	})
+
+	transfer, err := client.Transfers.Finalize(context.Background(), "1")
+	if err != nil {
+		t.Errorf("TransfersService.Finalize returned an error: %v", err)
+	}
+
+	want := &Transfer{
+		Success:   Bool(true),
+		ID:        String("1"),
+		Message:   nil,
+		State:     String("done"),
+		URL:       String("https://we.tl/t-12344657"),
+		ExpiresAt: String("2019-01-01T00:00:00Z"),
+		Files: []*File{
+			{
+				Multipart: &Multipart{
+					PartNumbers: Int64(1),
+					ChunkSize:   Int64(195906),
+				},
+				Size: Int64(195906),
+				Type: String("file"),
+				Name: String("pony.txt"),
+				ID:   String("1"),
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(transfer, want) {
+		t.Errorf("TransfersService.Finalize returned %v, want %v", transfer, want)
+	}
+}
+
 func TestTransfersService_Find(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
