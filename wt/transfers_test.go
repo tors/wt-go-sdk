@@ -8,6 +8,103 @@ import (
 	"testing"
 )
 
+func TestTransfersService_Create(t *testing.T) {
+	client, mux, srvURL, teardown := setup()
+	defer teardown()
+
+	// The Create test case is not designed to be an exhaustive test. We'll
+	// leave that to the methods under the helper methods (see below test
+	// cases) and uploaderService which it makes use of. We'll just have to
+	// make sure that Create touches all endpoints and fulfill the whole
+	// ceremony without throwing an single error.
+	touchedEndpoints := 0
+
+	// 1. create transfer
+	// 2. request for upload URL
+	// 3. actual file upload to s3
+	// 4. complete transfer
+	// 5. finalize transfer
+	// 6. profit! (not counted)
+	wantTouchedEndpoints := 5
+
+	// We'll still have to output the correct formats, else the whole thing
+	// breaks.
+	mux.HandleFunc("/transfers", func(w http.ResponseWriter, r *http.Request) {
+		touchedEndpoints++
+		fmt.Fprintf(w, `
+			{
+			  "success" : true,
+			  "id" : "1",
+			  "message" : "My first pony!",
+			  "state" : "uploading",
+			  "url" : null,
+			  "expires_at": "2019-01-01T00:00:00Z",
+			  "files" : [
+				{
+				  "multipart" : {
+					"part_numbers" : 1,
+					"chunk_size" : 5
+				  },
+				  "size" : 5,
+				  "type" : "file",
+				  "name" : "pony.txt",
+				  "id" : "1"
+				}
+			  ]
+			}
+		`)
+	})
+	mux.HandleFunc("/transfers/1/files/1/upload-url/1", func(w http.ResponseWriter, r *http.Request) {
+		touchedEndpoints++
+		fmt.Fprintf(w, `{"success": true, "url": "%v"}`, fmt.Sprintf("%v/part/%v", srvURL, 1))
+	})
+	mux.HandleFunc("/transfers/1/files/1/upload-complete", func(w http.ResponseWriter, r *http.Request) {
+		touchedEndpoints++
+		fmt.Fprint(w, `{"id": "1", "retries": 0, "name": "pony1.txt", "size": 2, "chunk_size": 2}`)
+	})
+	mux.HandleFunc("/transfers/1/finalize", func(w http.ResponseWriter, r *http.Request) {
+		touchedEndpoints++
+		fmt.Fprintf(w, `
+			{
+			  "success" : true,
+			  "id" : "1",
+			  "message" : "My first pony!",
+			  "state" : "done",
+			  "url" : "https://we.tl/t-12344657",
+			  "expires_at": "2019-01-01T00:00:00Z",
+			  "files" : [
+				{
+				  "multipart" : {
+					"part_numbers" : 1,
+					"chunk_size" : 5
+				  },
+				  "size" : 5,
+				  "type" : "file",
+				  "name" : "pony.txt",
+				  "id" : "1"
+				}
+			  ]
+			}
+		`)
+	})
+	// The fake S3 endpoint. For convenience, we just use the same httptest server.
+	mux.HandleFunc(fmt.Sprintf("/part/%v", 1), func(w http.ResponseWriter, r *http.Request) {
+		touchedEndpoints++
+		w.WriteHeader(200)
+	})
+
+	buf := NewBuffer("pony.txt", []byte("yehaa"))
+
+	_, err := client.Transfers.Create(context.Background(), nil, buf)
+	if err != nil {
+		t.Errorf("TransfersService.Create returned an error: %v", err)
+	}
+
+	if touchedEndpoints != wantTouchedEndpoints {
+		t.Errorf("TransfersService.Create number of endpoints touched %v, want %v", touchedEndpoints, wantTouchedEndpoints)
+	}
+}
+
 func TestTransfersService_Complete(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()

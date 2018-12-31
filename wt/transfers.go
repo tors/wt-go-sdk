@@ -58,17 +58,19 @@ type TransfersService service
 
 // Create attempts to upload data to WeTransfer using S3 as object storage. It
 // does the whole ceremony - create a transfer request, get the S3 signed URLs,
-// actually upload the file to S3, and complete and finalize the upload.
+// actually upload the file to S3, and complete and finalize the transfer.
 //
 // Create parameter data types can be string, *os.File, *Buffer, *BufferedFile.
 // Slices can be passed but will have to be unpacked.
 func (t *TransfersService) Create(ctx context.Context, message *string, in ...interface{}) (*Transfer, error) {
-	if in == nil {
+	if len(in) == 0 {
 		return nil, fmt.Errorf("empty files")
 	}
 
-	tx := make([]Transferable, len(in))
+	files := make([]Transferable, len(in))
 
+	// Select objects that are transferable and put it into the files slice.
+	// Else, return an error to cancel the whole transfer.
 	for i, obj := range in {
 		switch v := obj.(type) {
 		case string, *os.File:
@@ -76,17 +78,58 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 			if err != nil {
 				return nil, err
 			}
-			tx[i] = buf
+			files[i] = buf
 		case *Buffer:
-			tx[i] = (*Buffer)(v)
+			files[i] = (*Buffer)(v)
 		case *BufferedFile:
-			tx[i] = (*BufferedFile)(v)
+			files[i] = (*BufferedFile)(v)
 		default:
 			return nil, fmt.Errorf(`allowed types are string string *Buffer *BufferedFile`)
 		}
 	}
 
-	return t.createTransfer(ctx, message, tx...)
+	// `filemap` keys are file names. We need this mapping to get the
+	// actual file or buffer easily when we receive response from the transfer
+	// request.
+	filemap := make(map[string]Transferable)
+	for _, f := range files {
+		name := f.GetName()
+		filemap[name] = f
+	}
+
+	// Create a transfer object. Note that this does not upload the file or buffer.
+	transfer, err := t.createTransfer(ctx, message, files...)
+	if err != nil {
+		return nil, err
+	}
+
+	var errs []error
+
+	// Once we have the files that have been acknowledged by the WeTransfer, we
+	// map the files with our filemap so we begin the actual uploading.
+	for _, f := range transfer.Files {
+		name := f.GetName()
+		if tx, ok := filemap[name]; ok {
+			ft := newFileTransfer(tx, f)
+			err = t.client.uploader.upload(ctx, transfer, ft)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	// Do not complete and finalize the transfer if there are errors
+	if len(errs) > 0 {
+		return nil, joinErrors(errs, nil)
+	}
+
+	// Complete the transfer since there are no errors
+	_, err = t.Complete(ctx, transfer)
+	if err != nil {
+		return nil, err
+	}
+
+	return t.Finalize(ctx, transfer.GetID())
 }
 
 // createTransfer returns a transfer object after submitting a new transfer
