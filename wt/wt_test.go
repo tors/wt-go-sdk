@@ -1,6 +1,7 @@
 package wt
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -100,5 +101,20 @@ func TestNewClient(t *testing.T) {
 	}
 	if got, want := c.UserAgent, userAgent; got != want {
 		t.Errorf("NewClient UserAgent is %v, want %v", got, want)
+	}
+}
+
+func TestJoinErrors(t *testing.T) {
+	errs := []error{
+		errors.New("error 1"),
+		errors.New("error 2"),
+	}
+
+	err := joinErrors(errs, String("context"))
+
+	want := "context:\nerror 1\nerror 2\n"
+
+	if err.Error() != want {
+		t.Errorf("joinErrors returned %v, want %v", err.Error(), want)
 	}
 }

@@ -124,9 +124,9 @@ func (t *TransfersService) createTransfer(ctx context.Context, message *string, 
 // this method returns the list of completed transfer responses which length is
 // equal to the number of files specified in the transfer request.
 func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*CompletedTransfer, error) {
-	tid := tx.GetID()
-	errors := NewErrors(fmt.Sprintf("complete transfer %v errors", tid))
 	completed := make([]*CompletedTransfer, 0)
+
+	var errs []error
 
 	for _, file := range tx.Files {
 		fid := file.GetID()
@@ -138,18 +138,19 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 			PartNumbers: partNum,
 		})
 		if err != nil {
-			errors.Append(fmt.Errorf(`file %v completion request error: %v`, fid, err.Error()))
+			errs = append(errs, err)
 			continue
 		}
 		var ct CompletedTransfer
 		if _, err = t.client.Do(ctx, req, &ct); err != nil {
-			errors.Append(fmt.Errorf(`file %v completion error: %v`, fid, err.Error()))
+			errs = append(errs, err)
 		}
 		completed = append(completed, &ct)
 	}
 
-	if errors.Len() > 0 {
-		return nil, errors
+	if len(errs) > 0 {
+		errmsg := fmt.Sprintf("completing transfer %v, with %v error(s)", tx.GetID(), len(errs))
+		return nil, joinErrors(errs, &errmsg)
 	}
 
 	return completed, nil

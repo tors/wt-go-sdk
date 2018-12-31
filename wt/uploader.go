@@ -1,11 +1,11 @@
 package wt
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -42,7 +42,6 @@ type uploaderService service
 // upload the file or buffer in chunks if needed.
 func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *fileTransfer) error {
 	fid := ft.getID()
-	name := ft.getName()
 	partNum, chunkSize := ft.getMulipartValues()
 
 	reader, rerr := ft.getReader()
@@ -50,36 +49,31 @@ func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *file
 		return rerr
 	}
 
-	errors := NewErrors(fmt.Sprintf(`file %v, %v errors`, fid, name))
+	var errs []error
 
 	buf := make([]byte, 0, chunkSize)
 
-	var err error
-	var n int
-
 	for i := int64(1); i <= partNum; i++ {
-		n, err = reader.Read(buf[:chunkSize])
-		if n == 0 {
+		n, err := reader.Read(buf[:chunkSize])
+		if err != nil && err != io.EOF {
+			errs = append(errs, err)
 			break
 		}
 		buf = buf[:n]
-		uurl, nerr := u.getUploadURL(ctx, idx, fid, i)
-		if nerr != nil {
-			errors.Append(fmt.Errorf(`request upload URL part %v error: %v`, i, nerr.Error()))
+		uurl, err := u.getUploadURL(ctx, idx, fid, i)
+		if err != nil {
+			errs = append(errs, err)
 			continue
 		}
-		nerr = uploadBytes(ctx, uurl, buf)
-		if nerr != nil {
-			errors.Append(fmt.Errorf(`upload part %v error: %v`, i, nerr.Error()))
+		err = uploadBytes(ctx, uurl, buf)
+		if err != nil {
+			errs = append(errs, err)
 		}
 	}
 
-	if err != nil && err != io.EOF {
-		return err
-	}
-
-	if errors.Len() > 0 {
-		return errors
+	if len(errs) > 0 {
+		errmsg := fmt.Sprintf("upload %v failed with %v error(s)", idx.GetID(), len(errs))
+		return joinErrors(errs, &errmsg)
 	}
 
 	return nil
@@ -116,11 +110,11 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 	url := uurl.GetURL()
 
 	if url == "" {
-		return fmt.Errorf("blank URL entry")
+		return fmt.Errorf("blank URL")
 	}
 
 	if len(b) == 0 {
-		return fmt.Errorf("blank data")
+		return fmt.Errorf("blank data for URL: %v", uurl)
 	}
 
 	reader := bytes.NewReader(b)
@@ -148,13 +142,18 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 	}
 
 	defer r.Body.Close()
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
+
+	br := bufio.NewReader(r.Body)
+
+	buf := make([]byte, 0, 512*1024)
+
+	n, err := br.Read(buf[:cap(buf)])
+	if err != nil && err != io.EOF {
 		return err
 	}
 
-	return fmt.Errorf("upload bytes error in %v %v: %d %v",
+	return fmt.Errorf("upload bytes error %v %v: %d %v...",
 		r.Request.Method, r.Request.URL,
-		r.StatusCode, string(data),
+		r.StatusCode, string(buf[:n]),
 	)
 }
