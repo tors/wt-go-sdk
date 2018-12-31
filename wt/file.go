@@ -107,7 +107,6 @@ func BuildBufferedFile(f interface{}) (*BufferedFile, error) {
 
 	switch v := f.(type) {
 	case string:
-		path = (string)(v)
 		name, size, err = fileInfo(v)
 		if err != nil {
 			return nil, err
