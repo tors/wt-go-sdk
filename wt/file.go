@@ -231,9 +231,6 @@ func newFileTransfer(tx Transferable, file *File) *fileTransfer {
 	}
 }
 
-// fileTransferMap indexes fileTransfer by name or filepath
-type fileTransferMap map[string]fileTransfer
-
 // toFileObject converts a Transferable into a serializable file object
 func toFileObject(t Transferable) fileObject {
 	return fileObject{

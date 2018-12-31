@@ -42,7 +42,7 @@ For subsequent authorized requests, you'll need to pass a
 
 ## Transfers
 
-A transfer is a collection of files that can be created once, and downloaded
+A transfer is a collection of files that can be created once and downloaded
 until it expires. The expiry is set to 7 days and the maximum size of data per
 transfer is 2GB. Files are immutable once successfully uploaded.
 
