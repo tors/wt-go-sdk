@@ -152,7 +152,7 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 		return err
 	}
 
-	return fmt.Errorf("upload bytes error %v %v: %d %v...",
+	return fmt.Errorf("upload bytes error %v %v: %d %v",
 		r.Request.Method, r.Request.URL,
 		r.StatusCode, string(buf[:n]),
 	)
