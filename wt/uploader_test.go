@@ -9,11 +9,8 @@ import (
 )
 
 func TestUploaderService_upload(t *testing.T) {
-	client, mux, _, teardown := setup()
+	client, mux, srvURL, teardown := setup()
 	defer teardown()
-
-	s3, s3url, s3teardown := setupS3()
-	defer s3teardown()
 
 	tests := []struct {
 		partNumbers int
@@ -37,9 +34,9 @@ func TestUploaderService_upload(t *testing.T) {
 			func(partNum int) {
 				path := fmt.Sprintf("/%v/%v/files/%v/upload-url/%v", prefix, test.idx.GetID(), test.fileID, partNum)
 				mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-					fmt.Fprintf(w, `{"success": true, "url": "%s"}`, fmt.Sprintf("%v/%v/p/%v", s3url, prefix, partNum))
+					fmt.Fprintf(w, `{"success": true, "url": "%s"}`, fmt.Sprintf("%v/%v/p/%v", srvURL, prefix, partNum))
 				})
-				s3.HandleFunc(fmt.Sprintf("/%v/p/%v", prefix, partNum), func(w http.ResponseWriter, r *http.Request) {
+				mux.HandleFunc(fmt.Sprintf("/%v/p/%v", prefix, partNum), func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(200)
 				})
 			}(i)
@@ -97,7 +94,7 @@ func TestUploaderService_getUploadURL(t *testing.T) {
 }
 
 func TestUploadBytes(t *testing.T) {
-	s3, s3url, teardown := setupS3()
+	_, s3, s3url, teardown := setup()
 	defer teardown()
 
 	s3path := "/p/1"
@@ -118,7 +115,7 @@ func TestUploadBytes(t *testing.T) {
 }
 
 func TestUploadBytes_noSuchKey(t *testing.T) {
-	s3, s3url, teardown := setupS3()
+	_, s3, s3url, teardown := setup()
 	defer teardown()
 
 	s3.HandleFunc("/not/found/file/1", func(w http.ResponseWriter, r *http.Request) {

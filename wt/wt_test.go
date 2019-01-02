@@ -35,12 +35,6 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 	return client, mux, server.URL, server.Close
 }
 
-func setupS3() (mux *http.ServeMux, serverURL string, teardown func()) {
-	mux = http.NewServeMux()
-	server := httptest.NewServer(mux)
-	return mux, server.URL, server.Close
-}
-
 // testHeader checks http methods
 func testMethod(t *testing.T, r *http.Request, want string) {
 	if got := r.Method; got != want {
