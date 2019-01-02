@@ -35,6 +35,14 @@ func (f *File) GetID() string {
 	return *f.ID
 }
 
+// GetMultipart returns the Multipart field.
+func (f *File) GetMultipart() *Multipart {
+	if f == nil || f.Multipart == nil {
+		return nil
+	}
+	return f.Multipart
+}
+
 func (f File) String() string {
 	return ToString(f)
 }
@@ -174,6 +182,13 @@ func NewBuffer(name string, b []byte) *Buffer {
 	}
 }
 
+// File or item response from boards or transfers
+type fileItemObject interface {
+	GetID() string
+	GetName() string
+	GetMultipart() *Multipart
+}
+
 // fileObject represents the parameter serialized in JSON format to be sent to
 // create a file transfer
 type fileObject struct {
@@ -181,10 +196,11 @@ type fileObject struct {
 	Size int64  `json:"size"`
 }
 
-// fileTransfer has all the data needed to request for upload URLs
+// fileTransfer makes it easy to get the necessary data to request for upload
+// URLs and get the local files/buffer data where applicable.
 type fileTransfer struct {
 	tx   Transferable
-	file *File
+	file fileItemObject
 }
 
 func (f *fileTransfer) getID() string {
@@ -195,12 +211,15 @@ func (f *fileTransfer) getName() string {
 	return f.file.GetName()
 }
 
-func (f *fileTransfer) getMulipartValues() (int64, int64) {
-	if f == nil || f.file == nil || f.file.Multipart == nil {
-		return int64(0), int64(0)
+func (f *fileTransfer) getMulipartValues() (string, int64, int64) {
+	if f == nil || f.file == nil {
+		return "", int64(0), int64(0)
 	}
-	m := f.file.Multipart
-	return m.GetPartNumbers(), m.GetChunkSize()
+	m := f.file.GetMultipart()
+	if m == nil {
+		return "", int64(0), int64(0)
+	}
+	return m.GetID(), m.GetPartNumbers(), m.GetChunkSize()
 }
 
 func (f *fileTransfer) getReader() (io.Reader, error) {
@@ -232,7 +251,7 @@ func (f *fileTransfer) getBytes() []byte {
 	}
 }
 
-func newFileTransfer(tx Transferable, file *File) *fileTransfer {
+func newFileTransfer(tx Transferable, file fileItemObject) *fileTransfer {
 	return &fileTransfer{
 		tx:   tx,
 		file: file,

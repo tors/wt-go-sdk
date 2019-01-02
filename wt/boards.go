@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 )
 
 // Meta describes information on an item that is of link type
@@ -25,6 +26,32 @@ type Item struct {
 	Type      *string    `json:"type"`
 	Multipart *Multipart `json:"multipart,omitempty"`
 	Meta      *Meta      `json:"meta,omitempty"`
+}
+
+// GetName returns the Name field if it is not nil. Otherwise, it returns
+// an empty string.
+func (i *Item) GetName() string {
+	if i == nil || i.Name == nil {
+		return ""
+	}
+	return *i.Name
+}
+
+// GetID returns the ID field if it is not nil. Otherwise, it returns
+// an empty string.
+func (i *Item) GetID() string {
+	if i == nil || i.ID == nil {
+		return ""
+	}
+	return *i.ID
+}
+
+// GetMultipart returns the Multipart field.
+func (i *Item) GetMultipart() *Multipart {
+	if i == nil || i.Multipart == nil {
+		return nil
+	}
+	return i.Multipart
 }
 
 func (i Item) String() string {
@@ -106,9 +133,9 @@ func (b *BoardsService) Create(ctx context.Context, name string, desc *string) (
 	return board, nil
 }
 
-// AddLink creates a link item for a given board. It returns an Item with meta
-// information when the request is successful.
-func (b *BoardsService) AddLink(ctx context.Context, bid string, links ...*Link) ([]*Item, error) {
+// AddLinks creates link items for a given board. It returns a list of items
+// with meta information.
+func (b *BoardsService) AddLinks(ctx context.Context, bid string, links ...*Link) ([]*Item, error) {
 	path := fmt.Sprintf("boards/%v/links", url.PathEscape(bid))
 
 	var gotLinks []*Link
@@ -128,6 +155,89 @@ func (b *BoardsService) AddLink(ctx context.Context, bid string, links ...*Link)
 
 	var items []*Item
 	if _, err := b.client.Do(ctx, req, &items); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+// AddFiles uploads files to a specified board.
+func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interface{}) ([]*Item, error) {
+	if len(in) == 0 {
+		return nil, fmt.Errorf("empty files")
+	}
+
+	files := make([]Transferable, len(in))
+
+	for i, obj := range in {
+		switch v := obj.(type) {
+		case string, *os.File:
+			buf, err := BuildBufferedFile(v)
+			if err != nil {
+				return nil, err
+			}
+			files[i] = buf
+		case *Buffer:
+			files[i] = (*Buffer)(v)
+		case *BufferedFile:
+			files[i] = (*BufferedFile)(v)
+		default:
+			return nil, fmt.Errorf(`allowed types are string *Buffer *BufferedFile`)
+		}
+	}
+
+	filemap := make(map[string]Transferable)
+	for _, f := range files {
+		name := f.GetName()
+		filemap[name] = f
+	}
+
+	items, err := b.uploadFiles(ctx, board, files...)
+	if err != nil {
+		return nil, err
+	}
+
+	var errs []error
+
+	for _, f := range items {
+		name := f.GetName()
+		if tx, ok := filemap[name]; ok {
+			ft := newFileTransfer(tx, f)
+			err = b.client.uploader.upload(ctx, board, ft)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, joinErrors(errs, nil)
+	}
+
+	return items, nil
+}
+
+func (b *BoardsService) uploadFiles(ctx context.Context, board *Board, tx ...Transferable) ([]*Item, error) {
+	var fs []fileObject
+
+	for _, obj := range tx {
+		fs = append(fs, toFileObject(obj))
+	}
+
+	bid := board.GetID()
+	path := fmt.Sprintf("boards/%v/files", url.PathEscape(bid))
+	req, err := b.client.NewRequest("POST", path, &struct {
+		Files []fileObject `json:"files"`
+	}{
+		Files: fs,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*Item
+	if _, err = b.client.Do(ctx, req, &items); err != nil {
 		return nil, err
 	}
 

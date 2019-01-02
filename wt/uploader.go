@@ -10,8 +10,8 @@ import (
 	"net/url"
 )
 
-// identifiable describes an object that can return an id
-type identifiable interface {
+// boardOrTransfer describes either a Transfer or a Board object
+type boardOrTransfer interface {
 	GetID() string
 }
 
@@ -41,9 +41,9 @@ type uploaderService service
 // upload attempts to upload a file or a buffer. It does so by using the response
 // from the transfer request which has the multipart info. This info is used to
 // upload the file or buffer in chunks if needed.
-func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *fileTransfer) error {
+func (u *uploaderService) upload(ctx context.Context, bot boardOrTransfer, ft *fileTransfer) error {
 	fid := ft.getID()
-	partNum, chunkSize := ft.getMulipartValues()
+	mid, partNum, chunkSize := ft.getMulipartValues()
 
 	reader, rerr := ft.getReader()
 	if rerr != nil {
@@ -61,7 +61,7 @@ func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *file
 			break
 		}
 		buf = buf[:n]
-		uurl, err := u.getUploadURL(ctx, idx, fid, i)
+		uurl, err := u.getUploadURL(ctx, bot, fid, i, mid)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -73,28 +73,29 @@ func (u *uploaderService) upload(ctx context.Context, idx identifiable, ft *file
 	}
 
 	if len(errs) > 0 {
-		errmsg := fmt.Sprintf("upload %v failed with %v error(s)", idx.GetID(), len(errs))
+		errmsg := fmt.Sprintf("upload %v failed with %v error(s)", bot.GetID(), len(errs))
 		return joinErrors(errs, &errmsg)
 	}
 
 	return nil
 }
 
-func (u *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fid string, partNum int64) (*UploadURL, error) {
-	var pathPrefix string
+// getUploadURL retrieves an upload url given if it's a board or a transfer, a
+// file id, a part number and corresponding multipart ID if it's item response.
+func (u *uploaderService) getUploadURL(ctx context.Context, bot boardOrTransfer, fid string, partNum int64, mid string) (*UploadURL, error) {
+	var path string
 
-	switch idx.(type) {
-	case *Transfer:
-		pathPrefix = "transfers"
-	case *Board:
-		pathPrefix = "boards"
-	default:
-		return nil, fmt.Errorf("identifiable type not supported")
-	}
-
-	id := url.PathEscape(idx.GetID())
+	id := url.PathEscape(bot.GetID())
 	fid = url.PathEscape(fid)
-	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, id, fid, partNum)
+
+	switch bot.(type) {
+	case *Transfer:
+		path = fmt.Sprintf("transfers/%s/files/%s/upload-url/%d", id, fid, partNum)
+	case *Board:
+		path = fmt.Sprintf("boards/%s/files/%s/upload-url/%d/%v", id, fid, partNum, mid)
+	default:
+		return nil, fmt.Errorf("boardOrTransfer type not supported")
+	}
 
 	req, err := u.client.NewRequest("POST", path, nil)
 	if err != nil {

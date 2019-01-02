@@ -70,9 +70,9 @@ func TestBoardsService_AddLink(t *testing.T) {
 	title := "WeTransfer website"
 	link, _ := NewLink("https://wetransfer.com", &title)
 
-	item, err := client.Boards.AddLink(context.Background(), "1", link)
+	item, err := client.Boards.AddLinks(context.Background(), "1", link)
 	if err != nil {
-		t.Errorf("BoardsService.AddLink returned an error %v", err)
+		t.Errorf("BoardsService.AddLinks returned an error %v", err)
 	}
 
 	wantItem := []*Item{
@@ -87,11 +87,11 @@ func TestBoardsService_AddLink(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(item, wantItem) {
-		t.Errorf("BoardsService.AddLink returned %v, want %v", item, wantItem)
+		t.Errorf("BoardsService.AddLinks returned %v, want %v", item, wantItem)
 	}
 }
 
-func TestBoardsService_AddLink_badRequest(t *testing.T) {
+func TestBoardsService_AddLinks_badRequest(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -108,7 +108,7 @@ func TestBoardsService_AddLink_badRequest(t *testing.T) {
 	title := "WeTransfer website"
 	link, _ := NewLink("https://wetransfer.com", &title)
 
-	_, err := client.Boards.AddLink(context.Background(), "1", link)
+	_, err := client.Boards.AddLinks(context.Background(), "1", link)
 	if err == nil {
 		t.Errorf("Expected error to be returned.")
 	}
