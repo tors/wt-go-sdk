@@ -106,7 +106,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 
 	var errs []error
 
-	// Once we have the files that have been acknowledged by the WeTransfer, we
+	// Once we have the files that have been acknowledged by WeTransfer, we
 	// map the files with our filemap so we begin the actual uploading.
 	for _, f := range transfer.Files {
 		name := f.GetName()
