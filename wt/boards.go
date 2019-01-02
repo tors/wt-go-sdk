@@ -31,6 +31,31 @@ func (i Item) String() string {
 	return ToString(i)
 }
 
+// Link represents a link item in WeTransfer.
+type Link struct {
+	URL   *string `json:"url"`
+	Title *string `json:"title"`
+}
+
+func (l Link) String() string {
+	return ToString(l)
+}
+
+// NewLink returns a new link given a URL and an optional title. It
+// automatically validates the URL string and returns an error if it fails
+// validation.
+func NewLink(u string, title *string) (*Link, error) {
+	_, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+	link := &Link{
+		URL:   &u,
+		Title: title,
+	}
+	return link, nil
+}
+
 // Board represents a board object. Each board can have 0 to many board items.
 type Board struct {
 	ID    *string `json:"id"`
@@ -60,8 +85,8 @@ type BoardsService service
 
 // Create creates an empty WeTransfer board. Name is required but description
 // is optional.
-func (t *BoardsService) Create(ctx context.Context, name string, desc *string) (*Board, error) {
-	req, err := t.client.NewRequest("POST", "boards", &struct {
+func (b *BoardsService) Create(ctx context.Context, name string, desc *string) (*Board, error) {
+	req, err := b.client.NewRequest("POST", "boards", &struct {
 		Name string  `json:"name"`
 		Desc *string `json:"description"`
 	}{
@@ -74,24 +99,52 @@ func (t *BoardsService) Create(ctx context.Context, name string, desc *string) (
 	}
 
 	board := &Board{}
-	if _, err := t.client.Do(ctx, req, board); err != nil {
+	if _, err := b.client.Do(ctx, req, board); err != nil {
 		return nil, err
 	}
 
 	return board, nil
 }
 
+// AddLink creates a link item for a given board. It returns an Item with meta
+// information when the request is successful.
+func (b *BoardsService) AddLink(ctx context.Context, bid string, links ...*Link) ([]*Item, error) {
+	path := fmt.Sprintf("boards/%v/links", url.PathEscape(bid))
+
+	var gotLinks []*Link
+	for _, link := range links {
+		if link != nil {
+			gotLinks = append(gotLinks, link)
+		}
+	}
+	if len(gotLinks) == 0 {
+		return nil, fmt.Errorf("no links provided")
+	}
+
+	req, err := b.client.NewRequest("POST", path, gotLinks)
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*Item
+	if _, err := b.client.Do(ctx, req, &items); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
 // Find retrieves a board given an id.
-func (t *BoardsService) Find(ctx context.Context, id string) (*Board, error) {
+func (b *BoardsService) Find(ctx context.Context, id string) (*Board, error) {
 	path := fmt.Sprintf("boards/%v", url.PathEscape(id))
 
-	req, err := t.client.NewRequest("GET", path, nil)
+	req, err := b.client.NewRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	board := &Board{}
-	if _, err = t.client.Do(ctx, req, board); err != nil {
+	if _, err = b.client.Do(ctx, req, board); err != nil {
 		return nil, err
 	}
 

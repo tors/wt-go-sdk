@@ -47,6 +47,50 @@ func TestBoardsService_Create(t *testing.T) {
 	}
 }
 
+func TestBoardsService_AddLink(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/boards/1/links", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "POST")
+		fmt.Fprint(w, `
+			[
+			  {
+				"id": "99",
+				"url": "https://wetransfer.com/",
+				"meta": {
+				  "title": "WeTransfer"
+				},
+				"type": "link"
+			  }
+			]
+		`)
+	})
+
+	title := "WeTransfer website"
+	link, _ := NewLink("https://wetransfer.com", &title)
+
+	item, err := client.Boards.AddLink(context.Background(), "1", link)
+	if err != nil {
+		t.Errorf("BoardsService.AddLink returned an error %v", err)
+	}
+
+	wantItem := []*Item{
+		&Item{
+			ID:  String("99"),
+			URL: String("https://wetransfer.com/"),
+			Meta: &Meta{
+				Title: String("WeTransfer"),
+			},
+			Type: String("link"),
+		},
+	}
+
+	if !reflect.DeepEqual(item, wantItem) {
+		t.Errorf("BoardsService.AddLink returned %v, want %v", item, wantItem)
+	}
+}
+
 func TestBoardsService_Find(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
