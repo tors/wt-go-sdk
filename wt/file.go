@@ -41,8 +41,9 @@ func (f File) String() string {
 
 // Multipart is info on the chunks of data to be uploaded
 type Multipart struct {
-	PartNumbers *int64 `json:"part_numbers"`
-	ChunkSize   *int64 `json:"chunk_size"`
+	ID          *string `json:"id,omitempty"`
+	PartNumbers *int64  `json:"part_numbers"`
+	ChunkSize   *int64  `json:"chunk_size"`
 }
 
 // GetPartNumbers returns the PartNumbers field.
@@ -59,6 +60,14 @@ func (m *Multipart) GetChunkSize() int64 {
 		return int64(0)
 	}
 	return *m.ChunkSize
+}
+
+// GetID returns the ID field.
+func (m *Multipart) GetID() string {
+	if m == nil || m.ID == nil {
+		return ""
+	}
+	return *m.ID
 }
 
 func (m Multipart) String() string {
