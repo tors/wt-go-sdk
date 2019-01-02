@@ -91,6 +91,31 @@ func TestBoardsService_AddLink(t *testing.T) {
 	}
 }
 
+func TestBoardsService_AddLink_badRequest(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/boards/1/links", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		fmt.Fprint(w, `
+			{
+			  "success": false,
+			  "message": "\"board.links\" must be an array."
+			}
+		`)
+	})
+
+	title := "WeTransfer website"
+	link, _ := NewLink("https://wetransfer.com", &title)
+
+	_, err := client.Boards.AddLink(context.Background(), "1", link)
+	if err == nil {
+		t.Errorf("Expected error to be returned.")
+	}
+
+	testErrorResponse(t, err, "\"board.links\" must be an array.")
+}
+
 func TestBoardsService_Find(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
