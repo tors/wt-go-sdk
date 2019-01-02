@@ -3,6 +3,7 @@ package wt
 import (
 	"context"
 	"fmt"
+	"net/url"
 )
 
 // Meta describes information on an item that is of link type
@@ -82,7 +83,7 @@ func (t *BoardsService) Create(ctx context.Context, name string, desc *string) (
 
 // Find retrieves a board given an id.
 func (t *BoardsService) Find(ctx context.Context, id string) (*Board, error) {
-	path := fmt.Sprintf("boards/%v", id)
+	path := fmt.Sprintf("boards/%v", url.PathEscape(id))
 
 	req, err := t.client.NewRequest("GET", path, nil)
 	if err != nil {

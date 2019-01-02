@@ -3,6 +3,7 @@ package wt
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 )
 
@@ -84,7 +85,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 		case *BufferedFile:
 			files[i] = (*BufferedFile)(v)
 		default:
-			return nil, fmt.Errorf(`allowed types are string string *Buffer *BufferedFile`)
+			return nil, fmt.Errorf(`allowed types are string *Buffer *BufferedFile`)
 		}
 	}
 
@@ -172,8 +173,9 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 	var errs []error
 
 	for _, file := range tx.Files {
-		fid := file.GetID()
-		path := fmt.Sprintf("transfers/%v/files/%v/upload-complete", tx.GetID(), fid)
+		fid := url.PathEscape(file.GetID())
+		tid := url.PathEscape(tx.GetID())
+		path := fmt.Sprintf("transfers/%v/files/%v/upload-complete", tid, fid)
 		partNum := file.Multipart.GetPartNumbers()
 		req, err := t.client.NewRequest("PUT", path, &struct {
 			PartNumbers int64 `json:"file_numbers"`
@@ -201,7 +203,7 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 
 // Finalize closes a transfer for modification rendering it immutable and downloadable.
 func (t *TransfersService) Finalize(ctx context.Context, id string) (*Transfer, error) {
-	path := fmt.Sprintf("transfers/%v/finalize", id)
+	path := fmt.Sprintf("transfers/%v/finalize", url.PathEscape(id))
 
 	req, err := t.client.NewRequest("PUT", path, nil)
 	if err != nil {
@@ -218,7 +220,7 @@ func (t *TransfersService) Finalize(ctx context.Context, id string) (*Transfer, 
 
 // Find retrieves the transfer object given an ID.
 func (t *TransfersService) Find(ctx context.Context, id string) (*Transfer, error) {
-	path := fmt.Sprintf("transfers/%v", id)
+	path := fmt.Sprintf("transfers/%v", url.PathEscape(id))
 
 	req, err := t.client.NewRequest("GET", path, nil)
 	if err != nil {

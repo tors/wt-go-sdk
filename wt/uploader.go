@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 // identifiable describes an object that can return an id
@@ -91,7 +92,9 @@ func (u *uploaderService) getUploadURL(ctx context.Context, idx identifiable, fi
 		return nil, fmt.Errorf("identifiable type not supported")
 	}
 
-	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, idx.GetID(), fid, partNum)
+	id := url.PathEscape(idx.GetID())
+	fid = url.PathEscape(fid)
+	path := fmt.Sprintf("%s/%s/files/%s/upload-url/%d", pathPrefix, id, fid, partNum)
 
 	req, err := u.client.NewRequest("POST", path, nil)
 	if err != nil {
