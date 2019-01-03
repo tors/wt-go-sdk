@@ -208,10 +208,10 @@ func TestBoardsService_complete(t *testing.T) {
 		Items: []*Item{},
 	}
 	items := []*Item{
-		&Item{
+		{
 			ID: String("1"),
 		},
-		&Item{
+		{
 			ID: String("2"),
 		},
 	}
@@ -250,7 +250,7 @@ func TestBoardsService_complete_badRequest(t *testing.T) {
 		Items: []*Item{},
 	}
 	items := []*Item{
-		&Item{
+		{
 			ID: String("1"),
 		},
 	}
