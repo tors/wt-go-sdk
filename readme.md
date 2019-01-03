@@ -164,7 +164,30 @@ fmt.Println(board.Items)
 
 ## Testing
 
-To run the tests...
+There are 2 types of test suites in this library - unit and integration. The
+unit tests do not make network calls so it should run pretty fast.
+Integration tests on the other hand verify that this SDK is coded in such a way
+that it follows the actual behavior of the live API. Actual data is sent over
+to the live API and if there are incompatibilities, integration tests should
+hopefully be able to catch those.
+
+### Running the tests
+
+Run the unit tests...
+
 ```bash
-go test ./...
+make test
+```
+
+To run the integration tests, you'll need to get an API key and create an .env
+file like so:
+
+```bash
+echo WETRANSFER_API_TOKEN=key > integration/.env
+```
+
+Once you've done that, you can now run the integration test suite.
+
+```bash
+make integration
 ```
