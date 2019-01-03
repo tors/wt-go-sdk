@@ -38,10 +38,8 @@ func (t Transfer) String() string {
 	return ToString(t)
 }
 
-// CompletedTransfer represents a completed file transfer in
-// WeTransfer. This step is required after successfully sending the
-// files to S3.
-type CompletedTransfer struct {
+// completedTransfer represents a completed file transfer in WeTransfer.
+type completedTransfer struct {
 	ID        *string `json:"id"`
 	Retries   *int64  `json:"retries"`
 	Name      *string `json:"name"`
@@ -49,7 +47,7 @@ type CompletedTransfer struct {
 	ChunkSize *int64  `json:"chunk_size"`
 }
 
-func (c CompletedTransfer) String() string {
+func (c completedTransfer) String() string {
 	return ToString(c)
 }
 
@@ -125,12 +123,12 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 	}
 
 	// Complete the transfer since there are no errors
-	_, err = t.Complete(ctx, transfer)
+	_, err = t.complete(ctx, transfer)
 	if err != nil {
 		return nil, err
 	}
 
-	return t.Finalize(ctx, transfer.GetID())
+	return t.finalize(ctx, transfer.GetID())
 }
 
 // createTransfer returns a transfer object after submitting a new transfer
@@ -162,13 +160,13 @@ func (t *TransfersService) createTransfer(ctx context.Context, message *string, 
 	return &ts, nil
 }
 
-// Complete informs WeTransfer that all the uploading for our files is done.
+// complete informs WeTransfer that all the uploading for our files is done.
 // When the files are uploaded to S3, WeTransfer has no way of determining if
 // the transfer is successful or not. After the call to the endpoint is made,
 // this method returns the list of completed transfer responses which length is
 // equal to the number of files specified in the transfer request.
-func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*CompletedTransfer, error) {
-	completed := make([]*CompletedTransfer, 0)
+func (t *TransfersService) complete(ctx context.Context, tx *Transfer) ([]*completedTransfer, error) {
+	completed := make([]*completedTransfer, 0)
 
 	var errs []error
 
@@ -187,7 +185,7 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 			errs = append(errs, err)
 			continue
 		}
-		var ct CompletedTransfer
+		var ct completedTransfer
 		if _, err = t.client.Do(ctx, req, &ct); err != nil {
 			errs = append(errs, err)
 		}
@@ -203,7 +201,7 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 }
 
 // Finalize closes a transfer for modification rendering it immutable and downloadable.
-func (t *TransfersService) Finalize(ctx context.Context, id string) (*Transfer, error) {
+func (t *TransfersService) finalize(ctx context.Context, id string) (*Transfer, error) {
 	path := fmt.Sprintf("transfers/%v/finalize", url.PathEscape(id))
 
 	req, err := t.client.NewRequest("PUT", path, nil)

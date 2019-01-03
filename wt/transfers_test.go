@@ -105,7 +105,7 @@ func TestTransfersService_Create(t *testing.T) {
 	}
 }
 
-func TestTransfersService_Complete(t *testing.T) {
+func TestTransfersService_complete(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -136,7 +136,7 @@ func TestTransfersService_Complete(t *testing.T) {
 		},
 	}
 
-	want := []*CompletedTransfer{
+	want := []*completedTransfer{
 		{
 			ID:        String("1"),
 			Retries:   Int64(0),
@@ -153,17 +153,17 @@ func TestTransfersService_Complete(t *testing.T) {
 		},
 	}
 
-	completed, err := client.Transfers.Complete(context.Background(), tx)
+	completed, err := client.Transfers.complete(context.Background(), tx)
 	if err != nil {
-		t.Errorf("TransfersService.Complete returned an error: %v", err)
+		t.Errorf("TransfersService.complete returned an error: %v", err)
 	}
 
 	if !reflect.DeepEqual(completed, want) {
-		t.Errorf("TransfersService.Complete returned %v, want %v", completed, want)
+		t.Errorf("TransfersService.complete returned %v, want %v", completed, want)
 	}
 }
 
-func TestTransfersService_Complete_expectationFailed(t *testing.T) {
+func TestTransfersService_complete_expectationFailed(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -186,7 +186,7 @@ func TestTransfersService_Complete_expectationFailed(t *testing.T) {
 		},
 	}
 
-	completed, err := client.Transfers.Complete(context.Background(), tx)
+	completed, err := client.Transfers.complete(context.Background(), tx)
 	if err == nil {
 		t.Errorf("Expected error to be returned")
 	}
@@ -297,7 +297,7 @@ func TestTransfersService_createTransfer_badRequest(t *testing.T) {
 	testErrorResponse(t, err, wantError)
 }
 
-func TestTransfersService_Finalize(t *testing.T) {
+func TestTransfersService_finalize(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -327,9 +327,9 @@ func TestTransfersService_Finalize(t *testing.T) {
 		`)
 	})
 
-	transfer, err := client.Transfers.Finalize(context.Background(), "1")
+	transfer, err := client.Transfers.finalize(context.Background(), "1")
 	if err != nil {
-		t.Errorf("TransfersService.Finalize returned an error: %v", err)
+		t.Errorf("TransfersService.finalize returned an error: %v", err)
 	}
 
 	want := &Transfer{
@@ -354,7 +354,7 @@ func TestTransfersService_Finalize(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(transfer, want) {
-		t.Errorf("TransfersService.Finalize returned %v, want %v", transfer, want)
+		t.Errorf("TransfersService.finalize returned %v, want %v", transfer, want)
 	}
 }
 

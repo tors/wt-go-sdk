@@ -40,7 +40,7 @@ func readToken(file) (string, error) {
 		return "", err
 	}
 	if !bytes.Equal(b[:len(keyName)], keyName) {
-		return "", fmt.Errorf("Key must be WETRANSFER_API_TOKEN")
+		return "", fmt.Errorf("Key must be %v", string(keyName))
 	}
 	return string(bytes.Trim(b[len(keyName)+1:], "\n")), nil
 }
