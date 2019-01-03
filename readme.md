@@ -31,7 +31,7 @@ think your API key might be compromised, you can revoke it from within the
 You'll need to create an authorized client which automatically requests for a
 JWT token. This token is used in subsequent requests to the server.
 
-```
+```go
 apiKey := "<your-api-key>"
 ctx := context.Background()
 client, err := wt.NewAuthorizedClient(ctx, apiKey, nil)
@@ -91,7 +91,7 @@ Note that unpacking slices as parameter is consistent throughout boards and tran
 
 ### Find a transfer
 
-```
+```go
 transfer, _ := client.Transfers.Find(ctx, "transfer-id")
 fmt.Println(transfer.Files)
 ```
@@ -107,7 +107,7 @@ receive activity. If untouched, they expire after 3 months.
 To create a board, a name is required. You can also pass a description which is
 optional. New boards have 0 items.
 
-```
+```go
 board, err := client.Boards.Create(ctx, "My kittens", nil)
 fmt.Println(board.GetID())
 ```
@@ -143,7 +143,7 @@ you can group files using the board and add more files in the future if needed.
 Similar to transfer, you can use string, `*os.File` `*Buffer`, and
 `*BufferedFile` types as file objects to add files to board.
 
-```
+```go
 // slice of strings
 files := []string{ "disk/pony.txt", "disk/kitten.txt" }
 client.Boards.AddFiles(ctx, board, files...)
@@ -157,7 +157,7 @@ client.Boards.AddFiles(ctx, board, buffers...)
 
 ### Find a board
 
-```
+```go
 board, _ := client.Boards.Find(ctx, "board-id")
 fmt.Println(board.Items)
 ```
@@ -165,6 +165,6 @@ fmt.Println(board.Items)
 ## Testing
 
 To run the tests...
-```
+```bash
 go test ./...
 ```
