@@ -76,7 +76,7 @@ func TestBoardsService_AddLink(t *testing.T) {
 	}
 
 	wantItem := []*Item{
-		&Item{
+		{
 			ID:  String("99"),
 			URL: String("https://wetransfer.com/"),
 			Meta: &Meta{

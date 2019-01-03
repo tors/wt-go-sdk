@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-// Transferable describes a file object in WeTransfer
-type Transferable interface {
+// transferable describes a file object in WeTransfer
+type transferable interface {
 	GetName() string
 	GetSize() int64
 }
@@ -68,7 +68,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 		return nil, fmt.Errorf("empty files")
 	}
 
-	files := make([]Transferable, len(in))
+	files := make([]transferable, len(in))
 
 	// Select objects that are transferable and put it into the files slice.
 	// Else, return an error to cancel the whole transfer.
@@ -92,7 +92,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 	// `filemap` keys are file names. We need this mapping to get the
 	// actual file or buffer easily when we receive response from the transfer
 	// request.
-	filemap := make(map[string]Transferable)
+	filemap := make(map[string]transferable)
 	for _, f := range files {
 		name := f.GetName()
 		filemap[name] = f
@@ -135,7 +135,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 
 // createTransfer returns a transfer object after submitting a new transfer
 // request to the API
-func (t *TransfersService) createTransfer(ctx context.Context, message *string, tx ...Transferable) (*Transfer, error) {
+func (t *TransfersService) createTransfer(ctx context.Context, message *string, tx ...transferable) (*Transfer, error) {
 	var fs []fileObject
 
 	for _, obj := range tx {

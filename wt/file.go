@@ -82,7 +82,7 @@ func (m Multipart) String() string {
 	return ToString(m)
 }
 
-// BufferedFile implements the Transferable interface. It represents
+// BufferedFile implements the transferable interface. It represents
 // a file on disk to be sent as a file transfer.
 type BufferedFile struct {
 	name string
@@ -149,7 +149,7 @@ func BuildBufferedFile(f interface{}) (*BufferedFile, error) {
 	}, nil
 }
 
-// Buffer implements the Transferable interface. It represents a buffered data
+// Buffer implements the transferable interface. It represents a buffered data
 // (usually created on the fly) to be sent as a file object
 type Buffer struct {
 	name string
@@ -199,7 +199,7 @@ type fileObject struct {
 // fileTransfer makes it easy to get the necessary data to request for upload
 // URLs and get the local files/buffer data where applicable.
 type fileTransfer struct {
-	tx   Transferable
+	tx   transferable
 	file fileItemObject
 }
 
@@ -251,15 +251,15 @@ func (f *fileTransfer) getBytes() []byte {
 	}
 }
 
-func newFileTransfer(tx Transferable, file fileItemObject) *fileTransfer {
+func newFileTransfer(tx transferable, file fileItemObject) *fileTransfer {
 	return &fileTransfer{
 		tx:   tx,
 		file: file,
 	}
 }
 
-// toFileObject converts a Transferable into a serializable file object
-func toFileObject(t Transferable) fileObject {
+// toFileObject converts a transferable into a serializable file object
+func toFileObject(t transferable) fileObject {
 	return fileObject{
 		Name: t.GetName(),
 		Size: t.GetSize(),

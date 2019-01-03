@@ -73,8 +73,7 @@ URLs_, _actual file upload to S3_, _complete the upload_, and _finalize_ it.
 
 #### Slices
 
-You can pass slices, but you'll need to unpack it. `Transfers.Create` only
-accepts strings and `Transferable` interface types.
+You can pass a slice, but you'll need to unpack it.
 
 ```go
 // slice of strings
