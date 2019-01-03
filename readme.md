@@ -77,7 +77,7 @@ You can pass a slice, but you'll need to unpack it.
 
 ```go
 // slice of strings
-files := []string{ "/disk/pony.txt", "/disk/kitten.txt" }
+files := []string{ "disk/pony.txt", "disk/kitten.txt" }
 client.Transfers.Create(ctx, &message, files...)
 
 // slice of Buffers
@@ -87,5 +87,84 @@ buffers := []*wt.Buffer{&pony, &kitty}
 client.Transfers.Create(ctx, &message, buffers...)
 ```
 
+Note that unpacking slices as parameter is consistent throughout boards and transfers.
+
+### Find a transfer
+
+```
+transfer, _ := client.Transfers.Find(ctx, "transfer-id")
+fmt.Println(transfer.Files)
+```
+
 ## Boards
-> WIP
+
+A board is collection of items that can be links or traditional files. Unlike
+`transfers`, boards' items do not have explicit expiry time as long as they
+receive activity. If untouched, they expire after 3 months.
+
+### Create boards
+
+To create a board, a name is required. You can also pass a description which is
+optional. New boards have 0 items.
+
+```
+board, err := client.Boards.Create(ctx, "My kittens", nil)
+fmt.Println(board.GetID())
+```
+
+### Add links to a board
+
+In WeTransfer context, a link has two fields - a url which is required
+and a title which is optional. Links must added to existing boards.
+
+```go
+// Add single link
+desc := "Pony wiki"
+pony, _ := wt.NewLink("https://en.wikipedia.org/wiki/Pony", &desc)
+board, _ := client.Boards.AddLinks(ctx, board, pony)
+
+// Add multiple
+links := []*wt.Link{
+  pony,
+  &Link{
+    URL: "https://en.wikipedia.org/wiki/Kitten"
+  },
+}
+board, _ := client.Boards.AddLinks(ctx, board, links...)
+fmt.Println(board.Items)
+```
+
+### Add files to a board
+
+Files can be added to existing boards too. The way files are uploaded in boards
+is the same as how files are uploaded in trasfers. The only difference is that
+you can group files using the board and add more files in the future if needed.
+
+Similar to transfer, you can use string, `*os.File` `*Buffer`, and
+`*BufferedFile` types as file objects to add files to board.
+
+```
+// slice of strings
+files := []string{ "disk/pony.txt", "disk/kitten.txt" }
+client.Boards.AddFiles(ctx, board, files...)
+
+// slice of Buffers
+pony := wt.NewBuffer("pony.txt", []byte("yehaa")
+kitty := wt.NewBuffer("kitten.txt", []byte("meoww"))
+buffers := []*wt.Buffer{&pony, &kitty}
+client.Boards.AddFiles(ctx, board, buffers...)
+```
+
+### Find a board
+
+```
+board, _ := client.Boards.Find(ctx, "board-id")
+fmt.Println(board.Items)
+```
+
+## Testing
+
+To run the tests...
+```
+go test ./...
+```
