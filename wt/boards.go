@@ -135,7 +135,8 @@ func (b *BoardsService) Create(ctx context.Context, name string, desc *string) (
 
 // AddLinks creates link items for a given board. It returns a list of items
 // with meta information.
-func (b *BoardsService) AddLinks(ctx context.Context, bid string, links ...*Link) ([]*Item, error) {
+func (b *BoardsService) AddLinks(ctx context.Context, board *Board, links ...*Link) ([]*Item, error) {
+	bid := board.GetID()
 	path := fmt.Sprintf("boards/%v/links", url.PathEscape(bid))
 
 	var gotLinks []*Link
