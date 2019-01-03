@@ -172,9 +172,10 @@ func (t *TransfersService) Complete(ctx context.Context, tx *Transfer) ([]*Compl
 
 	var errs []error
 
+	tid := url.PathEscape(tx.GetID())
+
 	for _, file := range tx.Files {
 		fid := url.PathEscape(file.GetID())
-		tid := url.PathEscape(tx.GetID())
 		path := fmt.Sprintf("transfers/%v/files/%v/upload-complete", tid, fid)
 		partNum := file.Multipart.GetPartNumbers()
 		req, err := t.client.NewRequest("PUT", path, &struct {
