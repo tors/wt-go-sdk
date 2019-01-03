@@ -192,6 +192,68 @@ func TestBoardsService_Find(t *testing.T) {
 	}
 }
 
+func TestBoardsService_complete(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	board := &Board{
+		ID:    String("1"),
+		Items: []*Item{},
+	}
+	items := []*Item{
+		&Item{
+			ID: String("1"),
+		},
+		&Item{
+			ID: String("2"),
+		},
+	}
+
+	for _, item := range items {
+		path := fmt.Sprintf("/boards/%v/files/%v/upload-complete", board.GetID(), item.GetID())
+		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, "PUT")
+			fmt.Fprint(w, `{
+				"success": true,
+				"message": "File is marked as complete."
+			}`)
+		})
+	}
+
+	err := client.Boards.complete(context.Background(), board, items)
+	if err != nil {
+		t.Errorf("Boards.complete returned an error %v", err)
+	}
+}
+
+func TestBoardsService_complete_badRequest(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+	mux.HandleFunc("/boards/1/files/1/upload-complete", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		fmt.Fprint(w, `{
+		  "success": false,
+		  "message": "expected at least 1 part."
+		}`)
+	})
+
+	board := &Board{
+		ID:    String("1"),
+		Items: []*Item{},
+	}
+	items := []*Item{
+		&Item{
+			ID: String("1"),
+		},
+	}
+
+	err := client.Boards.complete(context.Background(), board, items)
+	if err == nil {
+		t.Error("Expected error to be returned")
+	}
+}
+
 func TestBoardsService_Find_forbidden(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()

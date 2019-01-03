@@ -214,6 +214,13 @@ func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interf
 		return nil, joinErrors(errs, nil)
 	}
 
+	// If we have reached this stage, that means there were no errors while
+	// uploading the files/chunks. Now we attempt to complete it.
+	err = b.complete(ctx, board, items)
+	if err != nil {
+		return nil, err
+	}
+
 	return items, nil
 }
 
@@ -242,6 +249,31 @@ func (b *BoardsService) uploadFiles(ctx context.Context, board *Board, tx ...tra
 	}
 
 	return items, nil
+}
+
+func (b *BoardsService) complete(ctx context.Context, board *Board, items []*Item) error {
+	var errs []error
+
+	bid := url.PathEscape(board.GetID())
+	for _, item := range items {
+		fid := url.PathEscape(item.GetID())
+		path := fmt.Sprintf("boards/%v/files/%v/upload-complete", bid, fid)
+		req, err := b.client.NewRequest("PUT", path, nil)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		if _, err = b.client.Do(ctx, req, nil); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		errmsg := fmt.Sprintf("completing transfer %v, with %v error(s)", bid, len(errs))
+		return joinErrors(errs, &errmsg)
+	}
+
+	return nil
 }
 
 // Find retrieves a board given an id.
