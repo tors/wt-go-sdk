@@ -70,7 +70,7 @@ func TestUploaderService_upload(t *testing.T) {
 	}
 }
 
-func TestUploaderService_getUploadURL_Transfers(t *testing.T) {
+func TestUploaderService_getUploadURL(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
 
@@ -100,6 +100,7 @@ func TestUploaderService_getUploadURL_Transfers(t *testing.T) {
 		}
 		func(urlStr string) {
 			mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, "GET")
 				fmt.Fprintf(w, `{"success": true, "url": "%v"}`, urlStr)
 			})
 		}(*tt.uurl.URL)

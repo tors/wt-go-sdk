@@ -97,7 +97,7 @@ func (u *uploaderService) getUploadURL(ctx context.Context, bot boardOrTransfer,
 		return nil, fmt.Errorf("boardOrTransfer type not supported")
 	}
 
-	req, err := u.client.NewRequest("POST", path, nil)
+	req, err := u.client.NewRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}

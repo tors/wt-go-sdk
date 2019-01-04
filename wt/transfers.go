@@ -34,6 +34,15 @@ func (t *Transfer) GetID() string {
 	return *t.ID
 }
 
+// GetURL returns the URL field if it is not nil. Otherwise, it returns
+// an empty string.
+func (t *Transfer) GetURL() string {
+	if t == nil || t.URL == nil {
+		return ""
+	}
+	return *t.URL
+}
+
 func (t Transfer) String() string {
 	return ToString(t)
 }
@@ -177,7 +186,7 @@ func (t *TransfersService) complete(ctx context.Context, tx *Transfer) ([]*compl
 		path := fmt.Sprintf("transfers/%v/files/%v/upload-complete", tid, fid)
 		partNum := file.Multipart.GetPartNumbers()
 		req, err := t.client.NewRequest("PUT", path, &struct {
-			PartNumbers int64 `json:"file_numbers"`
+			PartNumbers int64 `json:"part_numbers"`
 		}{
 			PartNumbers: partNum,
 		})

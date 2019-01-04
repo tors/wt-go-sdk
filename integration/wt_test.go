@@ -30,7 +30,7 @@ func init() {
 	}
 }
 
-func readToken(file) (string, error) {
+func readToken(file string) (string, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return "", err
