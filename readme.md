@@ -142,7 +142,7 @@ client.Boards.AddFiles(ctx, board, pony, kitten, narwhal, unicorn)
 
 // Pass a slice like Transfers
 
-withHornsOnly := append(pets[0:0], narwhal, unicorn)
+withHornsOnly := append(pets[:0], narwhal, unicorn)
 client.Boards.AddFiles(ctx, board, withHornsOnly...)
 ```
 
