@@ -31,15 +31,11 @@ func TestTransfers_Create_buffer(t *testing.T) {
 func TestTransfers_Create_files(t *testing.T) {
 	ctx := context.Background()
 
-	message := "Japan files"
+	message := "Japanese pets"
+	japan, _ := wt.NewLocalFile("../example/files/Japan-01🇯🇵.jpg")
+	pony := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
-	files := []string{
-		"../example/files/Japan-01🇯🇵.jpg",
-		"../example/files/Japan-02.jpg",
-		"../example/files/Japan-03.jpg",
-	}
-
-	transfer, err := client.Transfers.Create(ctx, &message, files)
+	transfer, err := client.Transfers.Create(ctx, &message, japan, pony)
 	if err != nil {
 		t.Errorf("Transfers.Create returned an error %v", err)
 	}

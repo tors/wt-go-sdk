@@ -48,46 +48,38 @@ transfer is 2GB. Files are immutable once successfully uploaded.
 
 ### Create transfers
 
-You can use string, `*os.File` `*Buffer`, and `*BufferedFile` types as file
-objects to create a transfer.
+You can use `*Buffer`, and `*LocalFile` types as file objects to create a
+transfer.
 
 ```go
 // Buffer
-buf := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+ponya := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
-// BufferedFile
-bufFile := wt.BuildBufferedFile("/from/disk/pony.txt")
+// LocalFile
+ponyb := wt.NewLocalFile("disk/pony.txt")
 
-// string creates a BufferedFile automatically when passed as parameter
-str := "/from/disk/kitten.txt"
-
-// *os.File
-file, _ := os.Open("/from/disk/pony.txt")
-
-client.Transfers.Create(ctx, &message, buf, bufFile, str, file)
+client.Transfers.Create(ctx, &message, ponya, ponyb)
 ```
 
 `Transfers.Create` does the necessary steps to actually transfer the file.
 Internally it does the whole ritual - _create new transfer_, _request for upload
 URLs_, _actual file upload to S3_, _complete the upload_, and _finalize_ it.
 
-#### Slices
+#### Uploadable slices
 
-You can pass a slice, but you'll need to unpack it.
+`Transfers.Create` is a variadic function that accepts structs that implement
+the `Uploadable` interface.
 
 ```go
-// slice of strings
-files := []string{ "disk/pony.txt", "disk/kitten.txt" }
-client.Transfers.Create(ctx, &message, files...)
+var pets []Uploadable
 
-// slice of Buffers
-pony := wt.NewBuffer("pony.txt", []byte("yehaa")
-kitty := wt.NewBuffer("kitten.txt", []byte("meoww"))
-buffers := []*wt.Buffer{&pony, &kitty}
-client.Transfers.Create(ctx, &message, buffers...)
+pony := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+kitten, _ := wt.NewLocalFile("disk/kitten.txt")
+
+pets = append(pets, pony, kitten)
+
+client.Transfers.Create(ctx, &message, pets...)
 ```
-
-Note that unpacking slices as parameter is consistent throughout boards and transfers.
 
 ### Find a transfer
 
@@ -125,10 +117,10 @@ board, _ := client.Boards.AddLinks(ctx, board, pony)
 
 // Add multiple
 links := []*wt.Link{
-  pony,
-  &Link{
-    URL: "https://en.wikipedia.org/wiki/Kitten"
-  },
+    pony,
+    &Link{
+        URL: "https://en.wikipedia.org/wiki/Kitten"
+    },
 }
 board, _ := client.Boards.AddLinks(ctx, board, links...)
 fmt.Println(board.Items)
@@ -140,19 +132,18 @@ Files can be added to existing boards too. The way files are uploaded in boards
 is the same as how files are uploaded in trasfers. The only difference is that
 you can group files using the board and add more files in the future if needed.
 
-Similar to transfer, you can use string, `*os.File` `*Buffer`, and
-`*BufferedFile` types as file objects to add files to board.
-
 ```go
-// slice of strings
-files := []string{ "disk/pony.txt", "disk/kitten.txt" }
-client.Boards.AddFiles(ctx, board, files...)
+pony := wt.NewBuffer("pony.txt", []byte("yehaaa"))
+kitten := wt.NewBuffer("kitten.txt", []byte("meowww"))
+narwhal, _ := wt.NewLocalFile("disk/narwhal.txt")
+unicorn, _ := wt.NewLocalFile("disk/unicorn.txt")
 
-// slice of Buffers
-pony := wt.NewBuffer("pony.txt", []byte("yehaa")
-kitty := wt.NewBuffer("kitten.txt", []byte("meoww"))
-buffers := []*wt.Buffer{&pony, &kitty}
-client.Boards.AddFiles(ctx, board, buffers...)
+client.Boards.AddFiles(ctx, board, pony, kitten, narwhal, unicorn)
+
+// Pass a slice like Transfers
+
+withHornsOnly := append(pets[0:0], narwhal, unicorn)
+client.Boards.AddFiles(ctx, board, withHornsOnly...)
 ```
 
 ### Find a board

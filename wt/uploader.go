@@ -10,12 +10,6 @@ import (
 	"net/url"
 )
 
-// Uploadable describes a buffer or a file that can be uploaded to WeTransfer.
-type Uploadable interface {
-	GetName() string
-	GetSize() int64
-}
-
 // boardOrTransfer describes either a Transfer or a Board object
 type boardOrTransfer interface {
 	GetID() string
@@ -49,11 +43,14 @@ type uploaderService service
 // upload the file or buffer in chunks if needed.
 func (u *uploaderService) upload(ctx context.Context, bot boardOrTransfer, ft *fileTransfer) error {
 	fid := ft.getID()
-	mid, partNum, chunkSize := ft.getMulipartValues()
+	mid, partNum, chunkSize := ft.stat()
 
-	reader, rerr := ft.getReader()
-	if rerr != nil {
-		return rerr
+	reader, file, err := ft.reader()
+	if err != nil {
+		return err
+	}
+	if file != nil {
+		defer file.Close()
 	}
 
 	var errs []error

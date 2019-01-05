@@ -235,13 +235,12 @@ func TestTransfersService_createTransfer(t *testing.T) {
 	tfile := setupTestFile(t, filename, message)
 	defer tfile.Close()
 
-	file, err := BuildBufferedFile(tfile)
+	localFile, err := NewLocalFile(tfile.Name())
 	if err != nil {
-		t.Errorf("BuildBufferedFile returned an error: %v", err)
+		t.Errorf("TransfersService.createTransfer returned an error: %v", err)
 	}
-	defer file.Close()
 
-	transfer, err := client.Transfers.createTransfer(context.Background(), &message, file)
+	transfer, err := client.Transfers.createTransfer(context.Background(), &message, localFile)
 	if err != nil {
 		t.Errorf("TransfersService.createTransfer returned an error: %v", err)
 	}

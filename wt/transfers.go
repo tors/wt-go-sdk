@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 )
 
 // Transfer represents the response when a successful transfer
@@ -41,6 +40,80 @@ func (t Transfer) String() string {
 	return ToString(t)
 }
 
+// File represents a WeTransfer file object transfer response
+type File struct {
+	Multipart *Multipart `json:"multipart"`
+	Size      *int64     `json:"size"`
+	Type      *string    `json:"type"`
+	Name      *string    `json:"name"`
+	ID        *string    `json:"id"`
+}
+
+// GetName returns the Name field if it is not nil. Otherwise, it returns
+// an empty string.
+func (f *File) GetName() string {
+	if f == nil || f.Name == nil {
+		return ""
+	}
+	return *f.Name
+}
+
+// GetID returns the ID field if it is not nil. Otherwise, it returns
+// an empty string.
+func (f *File) GetID() string {
+	if f == nil || f.ID == nil {
+		return ""
+	}
+	return *f.ID
+}
+
+// GetMultipart returns the Multipart field.
+func (f *File) GetMultipart() *Multipart {
+	if f == nil || f.Multipart == nil {
+		return nil
+	}
+	return f.Multipart
+}
+
+func (f File) String() string {
+	return ToString(f)
+}
+
+// Multipart is info on the chunks of data to be uploaded
+type Multipart struct {
+	ID          *string `json:"id,omitempty"`
+	PartNumbers *int64  `json:"part_numbers"`
+	ChunkSize   *int64  `json:"chunk_size"`
+}
+
+// GetPartNumbers returns the PartNumbers field.
+func (m *Multipart) GetPartNumbers() int64 {
+	if m == nil || m.PartNumbers == nil {
+		return int64(0)
+	}
+	return *m.PartNumbers
+}
+
+// GetChunkSize returns the ChunkSize field.
+func (m *Multipart) GetChunkSize() int64 {
+	if m == nil || m.ChunkSize == nil {
+		return int64(0)
+	}
+	return *m.ChunkSize
+}
+
+// GetID returns the ID field.
+func (m *Multipart) GetID() string {
+	if m == nil || m.ID == nil {
+		return ""
+	}
+	return *m.ID
+}
+
+func (m Multipart) String() string {
+	return ToString(m)
+}
+
 // completedTransfer represents a completed file transfer in WeTransfer.
 type completedTransfer struct {
 	ID        *string `json:"id"`
@@ -62,45 +135,25 @@ type TransfersService service
 // does the whole ceremony - create a transfer request, get the S3 signed URLs,
 // actually upload the file to S3, and complete and finalize the transfer.
 //
-// Create parameter data types can be string, *os.File, *Buffer, *BufferedFile.
+// Create parameter data types can be string, *os.File, *Buffer, *LocalFile.
 // Slices can be passed but will have to be unpacked.
-func (t *TransfersService) Create(ctx context.Context, message *string, in ...interface{}) (*Transfer, error) {
-	if len(in) == 0 {
+func (t *TransfersService) Create(ctx context.Context, message *string, up ...Uploadable) (*Transfer, error) {
+	if len(up) == 0 {
 		return nil, fmt.Errorf("empty files")
-	}
-
-	files := make([]Uploadable, len(in))
-
-	// Select objects that are Uploadable and put it into the files slice.
-	// Else, return an error to cancel the whole transfer.
-	for i, obj := range in {
-		switch v := obj.(type) {
-		case string, *os.File:
-			buf, err := BuildBufferedFile(v)
-			if err != nil {
-				return nil, err
-			}
-			files[i] = buf
-		case *Buffer:
-			files[i] = (*Buffer)(v)
-		case *BufferedFile:
-			files[i] = (*BufferedFile)(v)
-		default:
-			return nil, fmt.Errorf(`allowed types are string *Buffer *BufferedFile`)
-		}
 	}
 
 	// `filemap` keys are file names. We need this mapping to get the
 	// actual file or buffer easily when we receive response from the transfer
 	// request.
 	filemap := make(map[string]Uploadable)
-	for _, f := range files {
-		name := f.GetName()
+
+	for _, f := range up {
+		name, _ := f.Stat()
 		filemap[name] = f
 	}
 
 	// Create a transfer object. Note that this does not upload the file or buffer.
-	transfer, err := t.createTransfer(ctx, message, files...)
+	transfer, err := t.createTransfer(ctx, message, up...)
 	if err != nil {
 		return nil, err
 	}

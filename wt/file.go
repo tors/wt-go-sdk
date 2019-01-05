@@ -8,199 +8,74 @@ import (
 	"os"
 )
 
-// File represents a WeTransfer file object transfer response
-type File struct {
-	Multipart *Multipart `json:"multipart"`
-	Size      *int64     `json:"size"`
-	Type      *string    `json:"type"`
-	Name      *string    `json:"name"`
-	ID        *string    `json:"id"`
+// Uploadable describes a buffer or a file that can be uploaded to WeTransfer.
+type Uploadable interface {
+	Stat() (string, int64)
 }
 
-// GetName returns the Name field if it is not nil. Otherwise, it returns
-// an empty string.
-func (f *File) GetName() string {
-	if f == nil || f.Name == nil {
-		return ""
-	}
-	return *f.Name
-}
-
-// GetID returns the ID field if it is not nil. Otherwise, it returns
-// an empty string.
-func (f *File) GetID() string {
-	if f == nil || f.ID == nil {
-		return ""
-	}
-	return *f.ID
-}
-
-// GetMultipart returns the Multipart field.
-func (f *File) GetMultipart() *Multipart {
-	if f == nil || f.Multipart == nil {
-		return nil
-	}
-	return f.Multipart
-}
-
-func (f File) String() string {
-	return ToString(f)
-}
-
-// Multipart is info on the chunks of data to be uploaded
-type Multipart struct {
-	ID          *string `json:"id,omitempty"`
-	PartNumbers *int64  `json:"part_numbers"`
-	ChunkSize   *int64  `json:"chunk_size"`
-}
-
-// GetPartNumbers returns the PartNumbers field.
-func (m *Multipart) GetPartNumbers() int64 {
-	if m == nil || m.PartNumbers == nil {
-		return int64(0)
-	}
-	return *m.PartNumbers
-}
-
-// GetChunkSize returns the ChunkSize field.
-func (m *Multipart) GetChunkSize() int64 {
-	if m == nil || m.ChunkSize == nil {
-		return int64(0)
-	}
-	return *m.ChunkSize
-}
-
-// GetID returns the ID field.
-func (m *Multipart) GetID() string {
-	if m == nil || m.ID == nil {
-		return ""
-	}
-	return *m.ID
-}
-
-func (m Multipart) String() string {
-	return ToString(m)
-}
-
-// BufferedFile implements the Uploadable interface. It represents
+// LocalFile implements the Uploadable interface. It represents
 // a file on disk to be sent as a file transfer.
-type BufferedFile struct {
-	name string
-	size int64
-	file *os.File
+type LocalFile struct {
+	name     string
+	size     int64
+	filepath string
 }
 
-// GetName returns the name field.
-func (f *BufferedFile) GetName() string {
-	return f.name
+// Stat returns the info (name and size) of the uploadable. If there's
+// an error, it will be type *PathError
+func (l *LocalFile) Stat() (string, int64) {
+	return l.name, l.size
 }
 
-// GetSize returns the size field.
-func (f *BufferedFile) GetSize() int64 {
-	return f.size
-}
-
-// GetFile returns the file field.
-func (f *BufferedFile) GetFile() *os.File {
-	return f.file
-}
-
-// Close closes the file unless it's nil
-func (f *BufferedFile) Close() error {
-	if f == nil || f.file == nil {
-		return nil
+func NewLocalFile(filepath string) (*LocalFile, error) {
+	info, err := os.Stat(filepath)
+	if err != nil {
+		return nil, err
 	}
-	return f.file.Close()
-}
-
-// BuildBufferedFile returns a new BufferedFile given f where if could
-// be a string or an os.File. Regardless of data type, a stat is
-// performed to get the name and the size.
-func BuildBufferedFile(f interface{}) (*BufferedFile, error) {
-	var path, name string
-	var file *os.File
-	var size int64
-	var err error
-
-	switch v := f.(type) {
-	case string:
-		name, size, err = fileInfo(v)
-		if err != nil {
-			return nil, err
-		}
-		file, err = os.Open(v)
-		if err != nil {
-			return nil, err
-		}
-	case *os.File:
-		path = v.Name()
-		name, size, err = fileInfo(path)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unsupported type")
-	}
-
-	return &BufferedFile{
-		name: name,
-		size: size,
-		file: file,
+	return &LocalFile{
+		name:     sanitizeString(info.Name()),
+		size:     info.Size(),
+		filepath: filepath,
 	}, nil
 }
 
 // Buffer implements the Uploadable interface. It represents a buffered data
 // (usually created on the fly) to be sent as a file object
 type Buffer struct {
-	name string
-	size int64
-	b    []byte
+	name   string
+	buffer []byte
 }
 
-// GetName returns the name field.
-func (f *Buffer) GetName() string {
-	return f.name
-}
-
-// GetSize returns the size field.
-func (f *Buffer) GetSize() int64 {
-	return f.size
+func (b *Buffer) Stat() (string, int64) {
+	return b.name, int64(len(b.buffer))
 }
 
 // GetBytes returns the b field which represents data
-func (f *Buffer) GetBytes() []byte {
-	return f.b
+func (b *Buffer) GetBytes() []byte {
+	return b.buffer
 }
 
 // NewBuffer returns a new Buffer given a string and a slice of bytes
 func NewBuffer(name string, b []byte) *Buffer {
-	size := len(b)
 	return &Buffer{
-		name: name,
-		size: int64(size),
-		b:    b,
+		name:   name,
+		buffer: b,
 	}
 }
 
 // File or item response from boards or transfers
-type fileItemObject interface {
+type fileItem interface {
 	GetID() string
 	GetName() string
 	GetMultipart() *Multipart
 }
 
-// fileObject represents the parameter serialized in JSON format to be sent to
-// create a file transfer
-type fileObject struct {
-	Name string `json:"name"`
-	Size int64  `json:"size"`
-}
-
-// fileTransfer makes it easy to get the necessary data to request for upload
-// URLs and get the local files/buffer data where applicable.
+// fileTransfer wraps a buffer or file and the response object of
+// upload request to return necessary data including io.Reader for a
+// multipart upload.
 type fileTransfer struct {
 	up   Uploadable
-	file fileItemObject
+	file fileItem
 }
 
 func (f *fileTransfer) getID() string {
@@ -211,66 +86,52 @@ func (f *fileTransfer) getName() string {
 	return f.file.GetName()
 }
 
-func (f *fileTransfer) getMulipartValues() (string, int64, int64) {
+func (f *fileTransfer) stat() (id string, partNumbers int64, chunkSize int64) {
+	id, partNumbers, chunkSize = "", 0, 0
+
 	if f == nil || f.file == nil {
-		return "", int64(0), int64(0)
+		return id, partNumbers, chunkSize
 	}
+
 	m := f.file.GetMultipart()
 	if m == nil {
-		return "", int64(0), int64(0)
+		return id, partNumbers, chunkSize
 	}
+
 	return m.GetID(), m.GetPartNumbers(), m.GetChunkSize()
 }
 
-func (f *fileTransfer) getReader() (io.Reader, error) {
+func (f *fileTransfer) reader() (io.Reader, *os.File, error) {
 	switch v := f.up.(type) {
-	case *BufferedFile:
-		return bufio.NewReader(v.GetFile()), nil
+	case *LocalFile:
+		local, err := os.Open(v.filepath)
+		return bufio.NewReader(local), local, err
 	case *Buffer:
-		return bytes.NewReader(v.GetBytes()), nil
+		return bytes.NewReader(v.buffer), nil, nil
 	default:
-		return nil, fmt.Errorf("unsupported Uploadable source")
+		return nil, nil, fmt.Errorf("unsupported Uploadable source")
 	}
 }
 
-func (f *fileTransfer) getLocalFile() *os.File {
-	switch v := f.up.(type) {
-	case *BufferedFile:
-		return v.GetFile()
-	default:
-		return nil
-	}
-}
-
-func (f *fileTransfer) getBytes() []byte {
-	switch v := f.up.(type) {
-	case *Buffer:
-		return v.GetBytes()
-	default:
-		return nil
-	}
-}
-
-func newFileTransfer(up Uploadable, file fileItemObject) *fileTransfer {
+func newFileTransfer(up Uploadable, file fileItem) *fileTransfer {
 	return &fileTransfer{
 		up:   up,
 		file: file,
 	}
 }
 
-// toFileObject converts a Uploadable into a serializable file object
-func toFileObject(t Uploadable) fileObject {
-	return fileObject{
-		Name: t.GetName(),
-		Size: t.GetSize(),
-	}
+// fileObject represents the parameter serialized in JSON format to be sent to
+// create a file transfer.
+type fileObject struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
 }
 
-func fileInfo(name string) (string, int64, error) {
-	info, err := os.Stat(name)
-	if err != nil {
-		return "", 0, err
+// toFileObject converts a Uploadable into a serializable file object
+func toFileObject(t Uploadable) fileObject {
+	name, size := t.Stat()
+	return fileObject{
+		Name: name,
+		Size: size,
 	}
-	newName := sanitizeString(info.Name())
-	return newName, info.Size(), nil
 }

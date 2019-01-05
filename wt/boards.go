@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 )
 
 // Meta describes information on an item that is of link type
@@ -163,37 +162,18 @@ func (b *BoardsService) AddLinks(ctx context.Context, board *Board, links ...*Li
 }
 
 // AddFiles uploads files to a specified board.
-func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interface{}) ([]*Item, error) {
-	if len(in) == 0 {
+func (b *BoardsService) AddFiles(ctx context.Context, board *Board, up ...Uploadable) ([]*Item, error) {
+	if len(up) == 0 {
 		return nil, fmt.Errorf("empty files")
 	}
 
-	files := make([]Uploadable, len(in))
-
-	for i, obj := range in {
-		switch v := obj.(type) {
-		case string, *os.File:
-			buf, err := BuildBufferedFile(v)
-			if err != nil {
-				return nil, err
-			}
-			files[i] = buf
-		case *Buffer:
-			files[i] = (*Buffer)(v)
-		case *BufferedFile:
-			files[i] = (*BufferedFile)(v)
-		default:
-			return nil, fmt.Errorf(`allowed types are string *Buffer *BufferedFile`)
-		}
-	}
-
 	filemap := make(map[string]Uploadable)
-	for _, f := range files {
-		name := f.GetName()
+	for _, f := range up {
+		name, _ := f.Stat()
 		filemap[name] = f
 	}
 
-	items, err := b.uploadFiles(ctx, board, files...)
+	items, err := b.uploadFiles(ctx, board, up...)
 	if err != nil {
 		return nil, err
 	}
