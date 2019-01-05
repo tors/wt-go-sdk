@@ -101,6 +101,15 @@ func (b *Board) GetID() string {
 	return *b.ID
 }
 
+// GetURL returns the URL field if it is not nil. Otherwise, it returns
+// an empty string.
+func (b *Board) GetURL() string {
+	if b == nil || b.URL == nil {
+		return ""
+	}
+	return *b.URL
+}
+
 func (b Board) String() string {
 	return ToString(b)
 }
@@ -214,11 +223,7 @@ func (b *BoardsService) uploadFiles(ctx context.Context, board *Board, up ...Upl
 
 	bid := board.GetID()
 	path := fmt.Sprintf("boards/%v/files", url.PathEscape(bid))
-	req, err := b.client.NewRequest("POST", path, &struct {
-		Files []fileObject `json:"files"`
-	}{
-		Files: fs,
-	})
+	req, err := b.client.NewRequest("POST", path, fs)
 
 	if err != nil {
 		return nil, err
