@@ -3,47 +3,33 @@
 package integration
 
 import (
-	"context"
 	"testing"
-
-	"github.com/tors/wt-go-sdk/wt"
 )
 
-func TestTransfers_Create_buffer(t *testing.T) {
-	ctx := context.Background()
+func TestTransfersService(t *testing.T) {
+	// ctx := context.Background()
 
-	message := "My first pony!"
-	buffer := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+	// message := "My first pony!"
 
-	transfer, err := client.Transfers.Create(ctx, &message, buffer)
-	if err != nil {
-		t.Errorf("Transfers.Create returned an error %v", err)
-	}
+	// pony := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+	// japan, _ := wt.NewLocalFile("../example/files/Japan-01🇯🇵.jpg")
 
-	url := transfer.GetURL()
-	logf("Got URL: %v", url)
+	// transfer, err := client.Transfers.Create(ctx, &message, pony, japan)
+	// if err != nil {
+	// 	t.Errorf("Transfers.Create returned an error %v", err)
+	// }
 
-	if url == "" {
-		t.Errorf("Transfer.GetURL is expected not be empty")
-	}
-}
+	// url := transfer.GetURL()
+	// logf("Got URL: %v", url)
 
-func TestTransfers_Create_files(t *testing.T) {
-	ctx := context.Background()
+	// if url == "" {
+	// 	t.Errorf("Transfer.GetURL returned an empty string")
+	// }
 
-	message := "Japanese pets"
-	japan, _ := wt.NewLocalFile("../example/files/Japan-01🇯🇵.jpg")
-	pony := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+	// id := transfer.GetID()
+	// _, err = client.Transfers.Find(ctx, id)
 
-	transfer, err := client.Transfers.Create(ctx, &message, japan, pony)
-	if err != nil {
-		t.Errorf("Transfers.Create returned an error %v", err)
-	}
-
-	url := transfer.GetURL()
-	logf("Got URL: %v", url)
-
-	if url == "" {
-		t.Errorf("Transfer.GetURL is expected not be empty")
-	}
+	// if err != nil {
+	// 	t.Errorf("Transfers.Find returned an error %v", err)
+	// }
 }
