@@ -3,7 +3,7 @@
 
 This is an unofficial WeTransfer Go SDK.
 
-**Status**: Work in progress. Do not use in production... yet.
+**Status**: Beta 1. If you find bugs, please file an issue here.
 
 ## Installation
 
@@ -21,10 +21,6 @@ To get started, you'll need an API key. You can get one from WeTransfer's
 It's a good practice not to hardcode any private keys. In the event that you
 think your API key might be compromised, you can revoke it from within the
 [developer portal](https://developers.wetransfer.com/).
-
-### Helpful Links
-- [Documentation](https://godoc.org/github.com/tors/wt-go-sdk/wt)
-- [Examples](https://github.com/tors/wt-go-sdk/tree/master/example)
 
 ### Creating a client
 
@@ -182,3 +178,8 @@ Once you've done that, you can now run the integration test suite.
 ```bash
 make integration
 ```
+
+### Helpful Links
+- [Examples](https://github.com/tors/wt-go-sdk/tree/master/example)
+- [Documentation](https://godoc.org/github.com/tors/wt-go-sdk/wt)
+- [WeTransfer API in Github](https://wetransfer.github.io/wt-api-docs/index.html)
