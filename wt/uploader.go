@@ -10,6 +10,12 @@ import (
 	"net/url"
 )
 
+// Uploadable describes a buffer or a file that can be uploaded to WeTransfer.
+type Uploadable interface {
+	GetName() string
+	GetSize() int64
+}
+
 // boardOrTransfer describes either a Transfer or a Board object
 type boardOrTransfer interface {
 	GetID() string

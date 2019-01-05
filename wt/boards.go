@@ -168,7 +168,7 @@ func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interf
 		return nil, fmt.Errorf("empty files")
 	}
 
-	files := make([]transferable, len(in))
+	files := make([]Uploadable, len(in))
 
 	for i, obj := range in {
 		switch v := obj.(type) {
@@ -187,7 +187,7 @@ func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interf
 		}
 	}
 
-	filemap := make(map[string]transferable)
+	filemap := make(map[string]Uploadable)
 	for _, f := range files {
 		name := f.GetName()
 		filemap[name] = f
@@ -225,10 +225,10 @@ func (b *BoardsService) AddFiles(ctx context.Context, board *Board, in ...interf
 	return items, nil
 }
 
-func (b *BoardsService) uploadFiles(ctx context.Context, board *Board, tx ...transferable) ([]*Item, error) {
+func (b *BoardsService) uploadFiles(ctx context.Context, board *Board, up ...Uploadable) ([]*Item, error) {
 	var fs []fileObject
 
-	for _, obj := range tx {
+	for _, obj := range up {
 		fs = append(fs, toFileObject(obj))
 	}
 

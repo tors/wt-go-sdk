@@ -7,12 +7,6 @@ import (
 	"os"
 )
 
-// transferable describes a file object in WeTransfer
-type transferable interface {
-	GetName() string
-	GetSize() int64
-}
-
 // Transfer represents the response when a successful transfer
 // request is issued.
 type Transfer struct {
@@ -75,9 +69,9 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 		return nil, fmt.Errorf("empty files")
 	}
 
-	files := make([]transferable, len(in))
+	files := make([]Uploadable, len(in))
 
-	// Select objects that are transferable and put it into the files slice.
+	// Select objects that are Uploadable and put it into the files slice.
 	// Else, return an error to cancel the whole transfer.
 	for i, obj := range in {
 		switch v := obj.(type) {
@@ -99,7 +93,7 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 	// `filemap` keys are file names. We need this mapping to get the
 	// actual file or buffer easily when we receive response from the transfer
 	// request.
-	filemap := make(map[string]transferable)
+	filemap := make(map[string]Uploadable)
 	for _, f := range files {
 		name := f.GetName()
 		filemap[name] = f
@@ -142,10 +136,10 @@ func (t *TransfersService) Create(ctx context.Context, message *string, in ...in
 
 // createTransfer returns a transfer object after submitting a new transfer
 // request to the API
-func (t *TransfersService) createTransfer(ctx context.Context, message *string, tx ...transferable) (*Transfer, error) {
+func (t *TransfersService) createTransfer(ctx context.Context, message *string, up ...Uploadable) (*Transfer, error) {
 	var fs []fileObject
 
-	for _, obj := range tx {
+	for _, obj := range up {
 		fs = append(fs, toFileObject(obj))
 	}
 

@@ -82,7 +82,7 @@ func (m Multipart) String() string {
 	return ToString(m)
 }
 
-// BufferedFile implements the transferable interface. It represents
+// BufferedFile implements the Uploadable interface. It represents
 // a file on disk to be sent as a file transfer.
 type BufferedFile struct {
 	name string
@@ -149,7 +149,7 @@ func BuildBufferedFile(f interface{}) (*BufferedFile, error) {
 	}, nil
 }
 
-// Buffer implements the transferable interface. It represents a buffered data
+// Buffer implements the Uploadable interface. It represents a buffered data
 // (usually created on the fly) to be sent as a file object
 type Buffer struct {
 	name string
@@ -199,7 +199,7 @@ type fileObject struct {
 // fileTransfer makes it easy to get the necessary data to request for upload
 // URLs and get the local files/buffer data where applicable.
 type fileTransfer struct {
-	tx   transferable
+	up   Uploadable
 	file fileItemObject
 }
 
@@ -223,18 +223,18 @@ func (f *fileTransfer) getMulipartValues() (string, int64, int64) {
 }
 
 func (f *fileTransfer) getReader() (io.Reader, error) {
-	switch v := f.tx.(type) {
+	switch v := f.up.(type) {
 	case *BufferedFile:
 		return bufio.NewReader(v.GetFile()), nil
 	case *Buffer:
 		return bytes.NewReader(v.GetBytes()), nil
 	default:
-		return nil, fmt.Errorf("unsupported transferable source")
+		return nil, fmt.Errorf("unsupported Uploadable source")
 	}
 }
 
 func (f *fileTransfer) getLocalFile() *os.File {
-	switch v := f.tx.(type) {
+	switch v := f.up.(type) {
 	case *BufferedFile:
 		return v.GetFile()
 	default:
@@ -243,7 +243,7 @@ func (f *fileTransfer) getLocalFile() *os.File {
 }
 
 func (f *fileTransfer) getBytes() []byte {
-	switch v := f.tx.(type) {
+	switch v := f.up.(type) {
 	case *Buffer:
 		return v.GetBytes()
 	default:
@@ -251,15 +251,15 @@ func (f *fileTransfer) getBytes() []byte {
 	}
 }
 
-func newFileTransfer(tx transferable, file fileItemObject) *fileTransfer {
+func newFileTransfer(up Uploadable, file fileItemObject) *fileTransfer {
 	return &fileTransfer{
-		tx:   tx,
+		up:   up,
 		file: file,
 	}
 }
 
-// toFileObject converts a transferable into a serializable file object
-func toFileObject(t transferable) fileObject {
+// toFileObject converts a Uploadable into a serializable file object
+func toFileObject(t Uploadable) fileObject {
 	return fileObject{
 		Name: t.GetName(),
 		Size: t.GetSize(),
