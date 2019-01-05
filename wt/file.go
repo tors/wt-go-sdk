@@ -22,11 +22,12 @@ type LocalFile struct {
 }
 
 // Stat returns the info (name and size) of the uploadable. If there's
-// an error, it will be type *PathError
+// an error, it will be type *PathError.
 func (l *LocalFile) Stat() (string, int64) {
 	return l.name, l.size
 }
 
+// NewLocalFile returns a LocalFile if file exists given the filepath.
 func NewLocalFile(filepath string) (*LocalFile, error) {
 	info, err := os.Stat(filepath)
 	if err != nil {
@@ -40,22 +41,23 @@ func NewLocalFile(filepath string) (*LocalFile, error) {
 }
 
 // Buffer implements the Uploadable interface. It represents a buffered data
-// (usually created on the fly) to be sent as a file object
+// (usually created on the fly) to be sent as a file object.
 type Buffer struct {
 	name   string
 	buffer []byte
 }
 
+// Stat returns returns the name and the size of the uploadable buffer.
 func (b *Buffer) Stat() (string, int64) {
 	return b.name, int64(len(b.buffer))
 }
 
-// GetBytes returns the b field which represents data
+// GetBytes returns the b field which represents data.
 func (b *Buffer) GetBytes() []byte {
 	return b.buffer
 }
 
-// NewBuffer returns a new Buffer given a string and a slice of bytes
+// NewBuffer returns a new Buffer given a string and a slice of bytes.
 func NewBuffer(name string, b []byte) *Buffer {
 	return &Buffer{
 		name:   name,
@@ -63,7 +65,7 @@ func NewBuffer(name string, b []byte) *Buffer {
 	}
 }
 
-// File or item response from boards or transfers
+// File or item response from boards or transfers.
 type fileItem interface {
 	GetID() string
 	GetName() string
@@ -127,7 +129,7 @@ type fileObject struct {
 	Size int64  `json:"size"`
 }
 
-// toFileObject converts a Uploadable into a serializable file object
+// toFileObject converts a Uploadable into a serializable file object.
 func toFileObject(t Uploadable) fileObject {
 	name, size := t.Stat()
 	return fileObject{
