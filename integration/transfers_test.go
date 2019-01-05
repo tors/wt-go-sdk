@@ -9,33 +9,15 @@ import (
 	"github.com/tors/wt-go-sdk/wt"
 )
 
-func TestTransfers_Create_buffer(t *testing.T) {
+func TestTransfersService(t *testing.T) {
 	ctx := context.Background()
 
 	message := "My first pony!"
-	buffer := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
 
-	transfer, err := client.Transfers.Create(ctx, &message, buffer)
-	if err != nil {
-		t.Errorf("Transfers.Create returned an error %v", err)
-	}
-
-	url := transfer.GetURL()
-	logf("Got URL: %v", url)
-
-	if url == "" {
-		t.Errorf("Transfer.GetURL is expected not be empty")
-	}
-}
-
-func TestTransfers_Create_files(t *testing.T) {
-	ctx := context.Background()
-
-	message := "Japanese pets"
-	japan, _ := wt.NewLocalFile("../example/files/Japan-01🇯🇵.jpg")
 	pony := wt.NewBuffer("pony.txt", []byte("yeehaaa"))
+	japan, _ := wt.NewLocalFile("../example/files/Japan-01🇯🇵.jpg")
 
-	transfer, err := client.Transfers.Create(ctx, &message, japan, pony)
+	transfer, err := client.Transfers.Create(ctx, &message, pony, japan)
 	if err != nil {
 		t.Errorf("Transfers.Create returned an error %v", err)
 	}
@@ -44,6 +26,13 @@ func TestTransfers_Create_files(t *testing.T) {
 	logf("Got URL: %v", url)
 
 	if url == "" {
-		t.Errorf("Transfer.GetURL is expected not be empty")
+		t.Errorf("Transfer.GetURL returned an empty string")
+	}
+
+	id := transfer.GetID()
+	_, err = client.Transfers.Find(ctx, id)
+
+	if err != nil {
+		t.Errorf("Transfers.Find returned an error %v", err)
 	}
 }
