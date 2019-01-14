@@ -67,7 +67,7 @@ func (u *uploaderService) upload(ctx context.Context, bot boardOrTransfer, ft *f
 		bufCopy := make([]byte, n)
 		copy(bufCopy, buf) // copy bytes because.. goroutine.
 		go func(i int64, data []byte) {
-			uurl, err := u.getUploadURL(ctx, bot, fid, part, mid)
+			uurl, err := u.getUploadURL(ctx, bot, fid, i, mid)
 			if err != nil {
 				errChan <- err
 			} else {
