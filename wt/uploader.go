@@ -1,7 +1,6 @@
 package wt
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -56,6 +55,7 @@ func (u *uploaderService) upload(ctx context.Context, bot boardOrTransfer, ft *f
 	var errs []error
 
 	buf := make([]byte, 0, chunkSize)
+	errChan := make(chan error, partNum)
 
 	for i := int64(1); i <= partNum; i++ {
 		n, err := reader.Read(buf[:chunkSize])
@@ -64,12 +64,20 @@ func (u *uploaderService) upload(ctx context.Context, bot boardOrTransfer, ft *f
 			break
 		}
 		buf = buf[:n]
-		uurl, err := u.getUploadURL(ctx, bot, fid, i, mid)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		err = uploadBytes(ctx, uurl, buf)
+		bufCopy := make([]byte, n)
+		copy(bufCopy, buf) // copy bytes because.. goroutine.
+		go func(i int64, data []byte) {
+			uurl, err := u.getUploadURL(ctx, bot, fid, part, mid)
+			if err != nil {
+				errChan <- err
+			} else {
+				errChan <- uploadBytes(ctx, uurl, data)
+			}
+		}(i, bufCopy)
+	}
+
+	for i := int64(0); i < partNum; i++ {
+		err := <-errChan
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -125,7 +133,6 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 	}
 
 	reader := bytes.NewReader(b)
-
 	req, err := http.NewRequest("PUT", url, reader)
 	if err != nil {
 		return err
@@ -140,27 +147,14 @@ func uploadBytes(ctx context.Context, uurl *UploadURL, b []byte) error {
 			return ctx.Err()
 		default:
 		}
-
 		return err
 	}
+	defer r.Body.Close()
 
 	if c := r.StatusCode; 200 <= c && c <= 299 {
 		return nil
 	}
 
-	defer r.Body.Close()
-
-	br := bufio.NewReader(r.Body)
-
-	buf := make([]byte, 0, 512*1024)
-
-	n, err := br.Read(buf[:cap(buf)])
-	if err != nil && err != io.EOF {
-		return err
-	}
-
-	return fmt.Errorf("upload bytes error %v %v: %d %v",
-		r.Request.Method, r.Request.URL,
-		r.StatusCode, string(buf[:n]),
-	)
+	return fmt.Errorf("upload bytes error %v %v: %d",
+		r.Request.Method, r.Request.URL, r.StatusCode)
 }

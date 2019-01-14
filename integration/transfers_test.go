@@ -23,11 +23,13 @@ func TestTransfersService(t *testing.T) {
 	}
 
 	url := transfer.GetURL()
-	logf("Got URL: %v", url)
 
 	if url == "" {
 		t.Errorf("Transfer.GetURL returned an empty string")
 	}
+
+	logf("Got URL: %v", url)
+	logf("Transfer state: %v", *transfer.State)
 
 	id := transfer.GetID()
 	_, err = client.Transfers.Find(ctx, id)
