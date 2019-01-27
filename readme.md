@@ -3,7 +3,9 @@
 
 This is an unofficial WeTransfer Go SDK.
 
-**Status**: Beta 3. If you find bugs, please file an [issue here](https://github.com/tors/wt-go-sdk/issues). Thanks you!
+**Status**: _v1.0.0-rc.1_
+
+If you find bugs, please file an [issue here](https://github.com/tors/wt-go-sdk/issues). Thank you!
 
 ## Installation
 
